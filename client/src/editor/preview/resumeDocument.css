@@ -1,0 +1,108 @@
+.resume-document {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 14mm 16mm;
+  box-sizing: border-box;
+  background-color: #ffffff;
+  color: #000000;
+  font-family: "Inter Variable", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.35;
+}
+
+.resume-document-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 297mm;
+  color: #666666;
+  font-size: 11pt;
+  font-style: italic;
+  text-align: center;
+}
+
+.resume-document h1 {
+  font-size: 20pt;
+  font-weight: bold;
+  text-align: center;
+  margin: 0 0 4pt 0;
+  line-height: 1.2;
+}
+
+.resume-document .contact-line {
+  text-align: center;
+  font-size: 10pt;
+  margin: 0 0 10pt 0;
+  line-height: 1.35;
+}
+
+.resume-document .contact-line a,
+.resume-document a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.resume-document h2 {
+  font-size: 10pt;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  border-bottom: 1px solid #000000;
+  margin-top: 10pt;
+  margin-bottom: 4pt;
+  padding-bottom: 2pt;
+}
+
+.resume-document .item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8pt;
+}
+
+.resume-document .item-title {
+  font-weight: bold;
+}
+
+.resume-document .item-date {
+  white-space: nowrap;
+  font-size: 10pt;
+}
+
+.resume-document .item-subline {
+  margin-bottom: 2pt;
+}
+
+.resume-document .entry-block {
+  margin-bottom: 6pt;
+}
+
+.resume-document .entry-block:last-child {
+  margin-bottom: 0;
+}
+
+.resume-document p {
+  margin: 0 0 4pt 0;
+}
+
+.resume-document ul {
+  margin: 2pt 0 4pt 0;
+  padding-left: 16pt;
+  list-style-type: disc;
+}
+
+.resume-document li {
+  margin-bottom: 1.5pt;
+}
+
+.resume-document li:last-child {
+  margin-bottom: 0;
+}
+
+.resume-document .skills-line {
+  margin-bottom: 2.5pt;
+}
+
+.resume-document .skills-line:last-child {
+  margin-bottom: 0;
+}

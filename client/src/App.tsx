@@ -8,7 +8,7 @@ import { SlowServerBanner } from "./components/SlowServerBanner";
 import { LoginPage } from "./pages/LoginPage";
 import { SignupPage } from "./pages/SignupPage";
 import { DashboardPage } from "./pages/DashboardPage";
-import { EditorStubPage } from "./pages/EditorStubPage";
+import { EditorPage } from "./pages/EditorPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 
 export const App: React.FC = () => {
@@ -25,7 +25,7 @@ export const App: React.FC = () => {
 
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<DashboardPage />} />
-            <Route path="/resume/:id" element={<EditorStubPage />} />
+            <Route path="/resume/:id" element={<EditorPage />} />
           </Route>
 
           <Route path="*" element={<NotFoundPage />} />

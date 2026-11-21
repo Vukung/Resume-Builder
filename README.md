@@ -46,6 +46,10 @@ cd client
 npm test
 ```
 
+### Editor & Live Preview
+
+The resume editor (`/resume/:id`) features a side-by-side workspace with collapsible section forms and an ATS-friendly, semantic preview renderer styled with standard print units. Content edits automatically autosave with a 1500ms debounce, sequencing updates during in-flight saves to prevent overlapping requests. The editor flushes immediately on visibility change or manual save (`Ctrl+S`/`Cmd+S`), and retries failed saves automatically up to 3 times with exponential backoff before offering a manual retry button.
+
 ## Server Setup
 
 1. Install Node.js 24.x.
