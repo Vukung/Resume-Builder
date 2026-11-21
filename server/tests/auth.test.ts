@@ -9,6 +9,7 @@ describe("Phase 2: Authentication & Authorization", () => {
   let server: Server;
   let baseUrl: string;
   let ipCounter = 1;
+  const createdUserIds: string[] = [];
 
   function nextIp(): string {
     return `192.168.100.${ipCounter++}`;
@@ -34,8 +35,10 @@ describe("Phase 2: Authentication & Authorization", () => {
   });
 
   after(async () => {
-    // Delete all test users created during test runs
-    await query("DELETE FROM users WHERE email LIKE '%@example.invalid'");
+    // Delete test users created during this test run
+    if (createdUserIds.length > 0) {
+      await query("DELETE FROM users WHERE id = ANY($1::uuid[])", [createdUserIds]);
+    }
     await new Promise<void>((resolve, reject) => {
       server.close((err) => (err ? reject(err) : resolve()));
     });
@@ -59,6 +62,7 @@ describe("Phase 2: Authentication & Authorization", () => {
 
     assert.equal(res.status, 201);
     const body = (await res.json()) as { user: { id: string; email: string; name: string } };
+    createdUserIds.push(body.user.id);
     assert.equal(body.user.email, email.toLowerCase());
     assert.equal(body.user.name, "Valid User");
     assert.ok(body.user.id);
@@ -85,6 +89,8 @@ describe("Phase 2: Authentication & Authorization", () => {
     });
 
     assert.equal(signupRes.status, 201);
+    const signupData = (await signupRes.json()) as { user: { id: string } };
+    createdUserIds.push(signupData.user.id);
     const setCookie = signupRes.headers.get("set-cookie") || "";
     const cookieMatch = setCookie.match(/rr_session=([^;]+)/);
     assert.ok(cookieMatch, "rr_session cookie must be present");
@@ -136,6 +142,8 @@ describe("Phase 2: Authentication & Authorization", () => {
       }),
     });
     assert.equal(firstRes.status, 201);
+    const firstData = (await firstRes.json()) as { user: { id: string } };
+    createdUserIds.push(firstData.user.id);
 
     const secondRes = await fetch(`${baseUrl}/api/auth/signup`, {
       method: "POST",
@@ -241,6 +249,8 @@ describe("Phase 2: Authentication & Authorization", () => {
       }),
     });
     assert.equal(signupRes.status, 201);
+    const signupData = (await signupRes.json()) as { user: { id: string } };
+    createdUserIds.push(signupData.user.id);
     const setCookie = signupRes.headers.get("set-cookie") || "";
     const cookieMatch = setCookie.match(/rr_session=([^;]+)/);
     assert.ok(cookieMatch);

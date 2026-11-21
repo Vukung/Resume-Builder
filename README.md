@@ -22,6 +22,27 @@ npm run migrate
 
 The migrate script tracks applied files in a `schema_migrations` table and is safe to run repeatedly.
 
+## API Routes
+
+### Health
+- `GET /health`: Returns service health status without touching the database.
+- `GET /health/db`: Checks database connectivity and returns database status.
+
+### Authentication (`/api/auth`)
+- `POST /api/auth/signup`: Creates a new user account, sets session cookie, and returns user details.
+- `POST /api/auth/login`: Authenticates user credentials, sets session cookie, and returns user details.
+- `POST /api/auth/logout`: Clears the session cookie and logs the user out.
+- `GET /api/auth/me`: Returns the currently authenticated user details.
+
+### Resumes (`/api/resumes`)
+- `GET /api/resumes`: Lists all active resumes for the authenticated user, newest first, with optional title search (`?q=`).
+- `POST /api/resumes`: Creates a new resume with empty prefilled content.
+- `GET /api/resumes/:id`: Returns full details and content for a specific resume.
+- `PATCH /api/resumes/:id`: Renames a resume title.
+- `PUT /api/resumes/:id/content`: Validates and replaces resume content.
+- `POST /api/resumes/:id/duplicate`: Duplicates a resume with copied content and updated title.
+- `DELETE /api/resumes/:id`: Soft deletes a resume.
+
 ## Deploy to Render
 
 1. Push the repo to GitHub.

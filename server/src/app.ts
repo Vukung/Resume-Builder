@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import { config } from "./config";
 import { query } from "./db";
 import { authRouter } from "./routes/auth";
+import { resumesRouter } from "./routes/resumes";
 
 const app = express();
 
@@ -53,12 +54,32 @@ app.get("/health/db", async (_req: Request, res: Response) => {
 });
 
 app.use("/api/auth", authRouter);
+app.use("/api/resumes", resumesRouter);
 
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: "Not found" });
 });
 
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  if (
+    err &&
+    (err.type === "entity.parse.failed" ||
+      ((err as any).status === 400 && "body" in err))
+  ) {
+    res.status(400).json({ error: "Invalid JSON" });
+    return;
+  }
+
+  if (
+    err &&
+    (err.type === "entity.too.large" ||
+      (err as any).status === 413 ||
+      (err as any).statusCode === 413)
+  ) {
+    res.status(413).json({ error: "Payload too large" });
+    return;
+  }
+
   console.error("Unhandled error:", err.message);
   if (err.stack) {
     console.error(err.stack);
