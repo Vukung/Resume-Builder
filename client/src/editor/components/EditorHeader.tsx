@@ -102,8 +102,8 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   };
 
   return (
-    <header className="bg-surface-card border-b border-border h-16 px-4 sm:px-6 flex items-center justify-between shrink-0 z-20">
-      <div className="flex items-center gap-3 min-w-0">
+    <header className="bg-surface-card border-b border-border h-16 px-3 sm:px-6 flex items-center justify-between shrink-0 z-20 gap-2 sm:gap-4 overflow-hidden">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
         <button
           type="button"
           onClick={onBack}
@@ -114,10 +114,10 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           <span>Dashboard</span>
         </button>
 
-        <span className="text-border">|</span>
+        <span className="text-border shrink-0">|</span>
 
         {isEditing ? (
-          <div className="flex items-center gap-1.5 min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0 flex-1">
             <input
               ref={inputRef}
               type="text"
@@ -127,7 +127,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
               onChange={(e) => setEditTitle(e.target.value)}
               onKeyDown={handleKeyDown}
               onBlur={handleSaveRename}
-              className="text-base font-bold px-2 py-0.5 border border-accent rounded bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+              className="text-base font-bold px-2 py-0.5 border border-accent rounded bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-accent min-w-0 flex-1"
               aria-label="Edit resume title"
             />
             <button
@@ -137,7 +137,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                 handleSaveRename();
               }}
               disabled={isSavingTitle}
-              className="p-1 text-accent hover:bg-accent-subtle rounded focus:outline-none focus:ring-2 focus:ring-accent"
+              className="p-1 text-accent hover:bg-accent-subtle rounded focus:outline-none focus:ring-2 focus:ring-accent shrink-0"
               aria-label="Save title"
             >
               <Check className="w-4 h-4" />
@@ -150,15 +150,15 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                 setEditTitle(title);
               }}
               disabled={isSavingTitle}
-              className="p-1 text-foreground-muted hover:bg-surface rounded focus:outline-none focus:ring-2 focus:ring-accent"
+              className="p-1 text-foreground-muted hover:bg-surface rounded focus:outline-none focus:ring-2 focus:ring-accent shrink-0"
               aria-label="Cancel editing"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-2 min-w-0">
-            <h1 className="text-base sm:text-lg font-bold text-foreground truncate" title={title}>
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+            <h1 className="text-base sm:text-lg font-bold text-foreground truncate min-w-0" title={title}>
               {title}
             </h1>
             <button
@@ -173,7 +173,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
         )}
       </div>
 
-      <div className="shrink-0 ml-3" aria-live="polite">
+      <div className="shrink-0 ml-2 sm:ml-3" aria-live="polite">
         {renderSaveStatus()}
       </div>
     </header>

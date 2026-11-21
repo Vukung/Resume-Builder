@@ -1,7 +1,14 @@
+import fs from "node:fs";
+import path from "node:path";
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ResumeDocument, SECTION_ORDER } from "../editor/preview/ResumeDocument";
 import { ResumeContent } from "../api/types";
+
+const cssRaw = fs.readFileSync(
+  path.resolve(__dirname, "../editor/preview/resumeDocument.css"),
+  "utf-8"
+);
 
 describe("ResumeDocument", () => {
   const fullFixture: ResumeContent = {
@@ -200,5 +207,150 @@ describe("ResumeDocument", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Only Name");
     expect(screen.queryByRole("heading", { level: 2 })).not.toBeInTheDocument();
     expect(screen.queryByText("Start typing and your resume appears here.")).not.toBeInTheDocument();
+  });
+
+  it("renders fixture where every text field contains a 200 character unbroken string without throwing and applies safe wrapping style", () => {
+    const makeLong = (prefix: string) => prefix + "X".repeat(200 - prefix.length);
+
+    const fields = {
+      fullName: makeLong("name_"),
+      email: `${makeLong("email_")}@example.com`,
+      phone: makeLong("phone_"),
+      location: makeLong("loc_"),
+      linkLabel: makeLong("label_"),
+      linkUrl: `https://${makeLong("url_")}.com`,
+      summary: makeLong("summary_"),
+      institution: makeLong("inst_"),
+      degree: makeLong("degree_"),
+      skillsCat: makeLong("cat_"),
+      skillsItem: makeLong("item_"),
+      jobTitle: makeLong("title_"),
+      company: makeLong("company_"),
+      projectName: makeLong("proj_"),
+      techStack: makeLong("tech_"),
+      bullet: makeLong("bullet_"),
+      certName: makeLong("cert_"),
+      certIssuer: makeLong("issuer_"),
+    };
+
+    const longFixture: ResumeContent = {
+      schemaVersion: 1,
+      basics: {
+        fullName: fields.fullName,
+        email: fields.email,
+        phone: fields.phone,
+        location: fields.location,
+        links: [
+          { label: fields.linkLabel, url: fields.linkUrl },
+        ],
+      },
+      summary: fields.summary,
+      education: [
+        {
+          id: "edu-long",
+          institution: fields.institution,
+          degree: fields.degree,
+          startDate: "2020-01",
+          endDate: "2024-01",
+          gradeType: "cgpa",
+          gradeValue: 9.5,
+        },
+      ],
+      skills: [
+        {
+          id: "sk-long",
+          category: fields.skillsCat,
+          items: [fields.skillsItem],
+        },
+      ],
+      experience: [
+        {
+          id: "exp-long",
+          jobTitle: fields.jobTitle,
+          company: fields.company,
+          startDate: "2020-01",
+          endDate: "2024-01",
+          isCurrent: false,
+          bullets: [fields.bullet],
+        },
+      ],
+      projects: [
+        {
+          id: "proj-long",
+          name: fields.projectName,
+          techStack: [fields.techStack],
+          link: `https://${makeLong("projlink_")}.com`,
+          bullets: [fields.bullet],
+        },
+      ],
+      certifications: [
+        {
+          id: "cert-long",
+          name: fields.certName,
+          issuer: fields.certIssuer,
+        },
+      ],
+    };
+
+    let renderedContainer: HTMLElement | undefined;
+    expect(() => {
+      const { container } = render(<ResumeDocument content={longFixture} />);
+      renderedContainer = container;
+    }).not.toThrow();
+
+    const root = renderedContainer?.querySelector(".resume-document");
+    expect(root).toBeInTheDocument();
+
+    // Verify all long unbroken strings are present in the DOM
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(fields.fullName);
+    expect(screen.getByText(fields.email)).toBeInTheDocument();
+    expect(screen.getByText(fields.phone)).toBeInTheDocument();
+    expect(screen.getByText(fields.location)).toBeInTheDocument();
+    expect(screen.getByText(fields.linkLabel)).toBeInTheDocument();
+    expect(screen.getByText(fields.summary)).toBeInTheDocument();
+    expect(screen.getByText(fields.institution)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(fields.degree))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(fields.skillsCat))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(fields.skillsItem))).toBeInTheDocument();
+    expect(screen.getByText(fields.jobTitle)).toBeInTheDocument();
+    expect(screen.getByText(fields.company)).toBeInTheDocument();
+    expect(screen.getByText(fields.projectName)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(fields.techStack))).toBeInTheDocument();
+    expect(screen.getAllByText(fields.bullet).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(fields.certName)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(fields.certIssuer))).toBeInTheDocument();
+
+    // Verify stylesheet rules for text wrapping and flex row shrink behavior
+    expect(cssRaw).toMatch(/\.resume-document\s*\{[^}]*overflow-wrap:\s*anywhere/);
+    expect(cssRaw).toMatch(/\.resume-document\s*\{[^}]*word-break:\s*break-word/);
+    expect(cssRaw).toMatch(/\.resume-document\s+\.item-row\s*>\s*:first-child\s*\{[^}]*min-width:\s*0/);
+    expect(cssRaw).toMatch(/\.resume-document\s+\.item-date\s*\{[^}]*flex-shrink:\s*0/);
+
+    // Verify parsed stylesheet rules in DOM
+    const styleEl = document.createElement("style");
+    styleEl.textContent = cssRaw;
+    document.head.appendChild(styleEl);
+
+    const rules = Array.from(styleEl.sheet?.cssRules || []);
+    const docRule = rules.find(
+      (r) => (r as CSSStyleRule).selectorText === ".resume-document"
+    ) as CSSStyleRule | undefined;
+    expect(docRule).toBeDefined();
+    expect(docRule?.cssText).toMatch(/overflow-wrap:\s*anywhere/);
+    expect(docRule?.cssText).toMatch(/word-break:\s*break-word/);
+
+    const itemRowLeftRule = rules.find(
+      (r) => (r as CSSStyleRule).selectorText === ".resume-document .item-row > :first-child"
+    ) as CSSStyleRule | undefined;
+    expect(itemRowLeftRule).toBeDefined();
+    expect(itemRowLeftRule?.cssText).toMatch(/min-width:\s*0/);
+
+    const itemDateRule = rules.find(
+      (r) => (r as CSSStyleRule).selectorText === ".resume-document .item-date"
+    ) as CSSStyleRule | undefined;
+    expect(itemDateRule).toBeDefined();
+    expect(itemDateRule?.cssText).toMatch(/flex-shrink:\s*0/);
+
+    document.head.removeChild(styleEl);
   });
 });

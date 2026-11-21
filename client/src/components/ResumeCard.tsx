@@ -69,9 +69,9 @@ export const ResumeCard: React.FC<ResumeCardProps> = ({
       onClick={() => {
         if (!isEditing) onOpen(resume.id);
       }}
-      className="group bg-surface-card border border-border hover:border-border-hover rounded-lg p-5 shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
+      className="group bg-surface-card border border-border hover:border-border-hover rounded-lg p-5 shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between min-w-0"
     >
-      <div>
+      <div className="min-w-0">
         <div className="flex items-start justify-between gap-3">
           <div className="w-9 h-9 rounded-md bg-accent-subtle text-accent flex items-center justify-center shrink-0">
             <FileText className="w-5 h-5" />
@@ -82,10 +82,10 @@ export const ResumeCard: React.FC<ResumeCardProps> = ({
           </span>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-4 min-w-0">
           {isEditing ? (
             <div
-              className="flex items-center gap-1.5"
+              className="flex items-center gap-1.5 min-w-0"
               onClick={(e) => e.stopPropagation()}
             >
               <input
@@ -96,14 +96,14 @@ export const ResumeCard: React.FC<ResumeCardProps> = ({
                 disabled={isSaving}
                 onChange={(e) => setEditTitle(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="w-full text-base font-semibold px-2 py-1 border border-accent rounded bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full min-w-0 text-base font-semibold px-2 py-1 border border-accent rounded bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
                 aria-label="Edit resume title"
               />
               <button
                 type="button"
                 onClick={handleSaveRename}
                 disabled={isSaving}
-                className="p-1 text-accent hover:bg-accent-subtle rounded focus:outline-none focus:ring-2 focus:ring-accent"
+                className="p-1 text-accent hover:bg-accent-subtle rounded focus:outline-none focus:ring-2 focus:ring-accent shrink-0"
                 aria-label="Save title"
               >
                 <Check className="w-4 h-4" />
@@ -115,7 +115,7 @@ export const ResumeCard: React.FC<ResumeCardProps> = ({
                   setEditTitle(resume.title);
                 }}
                 disabled={isSaving}
-                className="p-1 text-foreground-muted hover:bg-surface rounded focus:outline-none focus:ring-2 focus:ring-accent"
+                className="p-1 text-foreground-muted hover:bg-surface rounded focus:outline-none focus:ring-2 focus:ring-accent shrink-0"
                 aria-label="Cancel editing"
               >
                 <X className="w-4 h-4" />
@@ -123,7 +123,7 @@ export const ResumeCard: React.FC<ResumeCardProps> = ({
             </div>
           ) : (
             <h3
-              className="font-semibold text-foreground text-base line-clamp-1 group-hover:text-accent transition-colors"
+              className="font-semibold text-foreground text-base truncate min-w-0 group-hover:text-accent transition-colors"
               title={resume.title}
             >
               {resume.title}
@@ -133,20 +133,20 @@ export const ResumeCard: React.FC<ResumeCardProps> = ({
       </div>
 
       <div
-        className="mt-6 pt-3 border-t border-border flex items-center justify-between gap-1 text-foreground-muted"
+        className="mt-6 pt-3 border-t border-border flex items-center justify-between gap-1 text-foreground-muted shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
           onClick={() => onOpen(resume.id)}
-          className="flex items-center gap-1 text-xs font-medium hover:text-accent px-2 py-1 rounded hover:bg-surface focus:outline-none focus:ring-2 focus:ring-accent"
+          className="flex items-center gap-1 text-xs font-medium hover:text-accent px-2 py-1 rounded hover:bg-surface focus:outline-none focus:ring-2 focus:ring-accent shrink-0"
           aria-label={`Open ${resume.title}`}
         >
           <ExternalLink className="w-3.5 h-3.5" />
           <span>Open</span>
         </button>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
             onClick={() => setIsEditing(true)}
