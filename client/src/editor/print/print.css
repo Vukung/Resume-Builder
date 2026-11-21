@@ -3,9 +3,9 @@
 }
 
 @media print {
-  html,
-  body {
-    margin: 0;
+  @page {
+    size: A4;
+    margin: 14mm 16mm;
   }
 
   #root,
@@ -15,41 +15,6 @@
 
   #print-root {
     display: block !important;
-  }
-
-  #print-root .print-frame {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-    margin: 0;
-    break-inside: auto;
-  }
-
-  #print-root .print-frame thead {
-    display: table-header-group;
-  }
-
-  #print-root .print-frame tfoot {
-    display: table-footer-group;
-  }
-
-  #print-root .print-frame tbody,
-  #print-root .print-frame tr,
-  #print-root .print-frame td {
-    break-inside: auto;
-  }
-
-  #print-root .print-frame td {
-    padding: 0;
-    border: 0;
-  }
-
-  #print-root .print-spacer {
-    height: 14mm;
-  }
-
-  #print-root .print-body {
-    padding: 0 16mm;
   }
 
   #print-root .resume-document {

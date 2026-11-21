@@ -55,11 +55,9 @@ The resume editor (`/resume/:id`) features a side-by-side workspace with collaps
 The editor provides a direct "Print or save as PDF" toolbar button as well as native browser shortcut support (`Ctrl+P` / `Cmd+P`).
 
 - **Architecture**: In-memory content renders into a clean `#print-root` DOM portal during print via `beforeprint` / `afterprint` window listeners. Only one layout component (`ResumeDocument`) exists in the codebase for both live screen preview and print output.
-- **Print Modes**:
-  - **Chromium mode (Chrome, Edge)**: Dynamically injects `@page { size: A4; margin: 0; }` on print to suppress browser header and footer text (date, title, URL, page number). Margins are recreated using a print-only table spacer frame with repeating `thead` and `tfoot` 14mm spacers and 16mm horizontal body padding.
-  - **Standard mode (Firefox, Safari, etc.)**: Dynamically injects `@page { size: A4; margin: 14mm 16mm; }` without table wrappers.
-- **Page Rules**: All app UI (`#root` and toast containers) are hidden in print. Section headings (`break-after: avoid`), entries, skills lines, and bullet items (`break-inside: avoid`) prevent awkward page cuts. Paragraphs enforce `orphans: 3` and `widows: 3`.
+- **Print Stylesheet & Margins**: Styled via `@media print` with standard `@page { size: A4; margin: 14mm 16mm; }`. All app UI (`#root` and toast containers) are hidden, while section headings (`break-after: avoid`), entries, skills lines, and bullet items (`break-inside: avoid`) prevent awkward page cuts. Paragraphs enforce `orphans: 3` and `widows: 3`.
 - **File Name**: During print, `document.title` temporarily changes to `<Full Name> - Resume` (falling back to `<Resume Title> - Resume` if the name is blank), so the browser automatically suggests a clean PDF file name when choosing "Save as PDF".
+- **Headers & Footers**: Browser print dialogs default to adding date/URL headers and footers; turning off "Headers and footers" in the print settings yields clean margins.
 - **Selectable Text**: Exported PDFs contain genuine selectable text and semantic HTML elements (headings, paragraphs, lists), remaining fully ATS-parseable.
 
 ## Server Setup
