@@ -45,6 +45,12 @@ export interface CertificationItem {
   issuer: string;
 }
 
+export interface SkillGroup {
+  id: string;
+  category: string;
+  items: string[];
+}
+
 export interface ResumeContent {
   schemaVersion: 1;
   basics: Basics;
@@ -53,6 +59,7 @@ export interface ResumeContent {
   experience: ExperienceItem[];
   projects: ProjectItem[];
   certifications: CertificationItem[];
+  skills: SkillGroup[];
 }
 
 export interface User {

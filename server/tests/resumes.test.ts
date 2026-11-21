@@ -12,7 +12,7 @@ import {
   randomEmail,
   TestUser,
 } from "./helpers";
-import { ResumeContent } from "../src/schemas/resumeContent";
+import { ResumeContent, emptyContent } from "../src/schemas/resumeContent";
 
 describe("Phase 3: Resumes API", () => {
   let server: Server;
@@ -91,6 +91,7 @@ describe("Phase 3: Resumes API", () => {
     assert.deepEqual(c.experience, []);
     assert.deepEqual(c.projects, []);
     assert.deepEqual(c.certifications, []);
+    assert.deepEqual(c.skills, []);
   });
 
   test("3. List returns only the caller's resumes and no content field. B never sees A's", async () => {
@@ -329,6 +330,7 @@ describe("Phase 3: Resumes API", () => {
           issuer: "Amazon Web Services",
         },
       ],
+      skills: [],
     };
 
     const putRes = await authenticatedFetch(baseUrl, `/api/resumes/${resume.id}/content`, userA.cookie, {
@@ -365,6 +367,7 @@ describe("Phase 3: Resumes API", () => {
       experience: [],
       projects: [],
       certifications: [],
+      skills: [],
     };
 
     const cases: Array<{ label: string; payload: any }> = [
@@ -534,6 +537,7 @@ describe("Phase 3: Resumes API", () => {
       experience: [],
       projects: [],
       certifications: [],
+      skills: [],
     };
 
     const putRes = await authenticatedFetch(baseUrl, `/api/resumes/${resume.id}/content`, userA.cookie, {
@@ -573,6 +577,7 @@ describe("Phase 3: Resumes API", () => {
       ],
       projects: [],
       certifications: [],
+      skills: [],
     };
 
     await authenticatedFetch(baseUrl, `/api/resumes/${original.id}/content`, userA.cookie, {
@@ -800,5 +805,223 @@ describe("Phase 3: Resumes API", () => {
     assert.equal(res.status, 403);
     const body = await res.json();
     assert.deepEqual(body, { error: "Forbidden" });
+  });
+
+  test("16. Content with a valid skills list saves, and GET returns it exactly", async () => {
+    const createRes = await authenticatedFetch(baseUrl, "/api/resumes", userA.cookie, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: "Skills Test" }),
+    });
+    const resume = (await createRes.json()).resume;
+
+    const contentWithSkills = {
+      ...emptyContent(userA),
+      skills: [
+        {
+          id: "skill-group-1",
+          category: "Programming Languages",
+          items: ["TypeScript", "Python", "Go"],
+        },
+        {
+          id: "skill-group-2",
+          category: "Frameworks & Libraries",
+          items: ["React", "Express", "Next.js"],
+        },
+      ],
+    };
+
+    const putRes = await authenticatedFetch(baseUrl, `/api/resumes/${resume.id}/content`, userA.cookie, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(contentWithSkills),
+    });
+    assert.equal(putRes.status, 200);
+
+    const getRes = await authenticatedFetch(baseUrl, `/api/resumes/${resume.id}`, userA.cookie);
+    assert.equal(getRes.status, 200);
+    const getBody = await getRes.json();
+    assert.deepEqual(getBody.resume.content, contentWithSkills);
+  });
+
+  test("17. A PUT body with no skills key is accepted, and the following GET shows skills as an empty array", async () => {
+    const createRes = await authenticatedFetch(baseUrl, "/api/resumes", userA.cookie, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: "No Skills Key Test" }),
+    });
+    const resume = (await createRes.json()).resume;
+
+    const contentWithoutSkills: any = {
+      schemaVersion: 1,
+      basics: { fullName: "A", email: "a@example.com", phone: "", location: "", links: [] },
+      summary: "Summary text",
+      education: [],
+      experience: [],
+      projects: [],
+      certifications: [],
+    };
+    assert.equal("skills" in contentWithoutSkills, false);
+
+    const putRes = await authenticatedFetch(baseUrl, `/api/resumes/${resume.id}/content`, userA.cookie, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(contentWithoutSkills),
+    });
+    assert.equal(putRes.status, 200);
+
+    const getRes = await authenticatedFetch(baseUrl, `/api/resumes/${resume.id}`, userA.cookie);
+    assert.equal(getRes.status, 200);
+    const getBody = await getRes.json();
+    assert.deepEqual(getBody.resume.content.skills, []);
+  });
+
+  test("18. Legacy row without skills key returns normalized skills as [] on GET", async () => {
+    const legacyContent = {
+      schemaVersion: 1,
+      basics: { fullName: "Legacy User", email: "legacy@example.com", phone: "", location: "", links: [] },
+      summary: "Legacy summary",
+      education: [],
+      experience: [],
+      projects: [],
+      certifications: [],
+    };
+
+    const insertResult = await query<{ id: string }>(
+      `INSERT INTO resumes (user_id, title, content)
+       VALUES ($1, $2, $3::jsonb)
+       RETURNING id`,
+      [userA.id, "Legacy Resume", JSON.stringify(legacyContent)]
+    );
+    const legacyId = insertResult.rows[0].id;
+
+    const getRes = await authenticatedFetch(baseUrl, `/api/resumes/${legacyId}`, userA.cookie);
+    assert.equal(getRes.status, 200);
+    const getBody = await getRes.json();
+    assert.deepEqual(getBody.resume.content.skills, []);
+    assert.equal(getBody.resume.content.summary, "Legacy summary");
+  });
+
+  test("19. Invalid skills return 400 for each of: 16 groups, 41 items in one group, item > 40 chars, category > 50 chars, duplicate ids, unknown key inside skills group", async () => {
+    const createRes = await authenticatedFetch(baseUrl, "/api/resumes", userA.cookie, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: "Invalid Skills Test" }),
+    });
+    const resume = (await createRes.json()).resume;
+
+    const baseValid = emptyContent(userA);
+
+    const invalidCases: Array<{ label: string; skills: any }> = [
+      {
+        label: "16 groups",
+        skills: Array.from({ length: 16 }, (_, i) => ({
+          id: `group-${i}`,
+          category: `Category ${i}`,
+          items: ["item"],
+        })),
+      },
+      {
+        label: "41 items in one group",
+        skills: [
+          {
+            id: "group-1",
+            category: "Languages",
+            items: Array(41).fill("item"),
+          },
+        ],
+      },
+      {
+        label: "an item longer than 40 characters",
+        skills: [
+          {
+            id: "group-1",
+            category: "Languages",
+            items: ["a".repeat(41)],
+          },
+        ],
+      },
+      {
+        label: "a category longer than 50 characters",
+        skills: [
+          {
+            id: "group-1",
+            category: "c".repeat(51),
+            items: ["item"],
+          },
+        ],
+      },
+      {
+        label: "duplicate ids",
+        skills: [
+          { id: "duplicate-id", category: "Cat 1", items: ["item1"] },
+          { id: "duplicate-id", category: "Cat 2", items: ["item2"] },
+        ],
+      },
+      {
+        label: "unknown key inside a skills group",
+        skills: [
+          {
+            id: "group-1",
+            category: "Languages",
+            items: ["item"],
+            unexpectedKey: "bad",
+          },
+        ],
+      },
+    ];
+
+    for (const c of invalidCases) {
+      const res = await authenticatedFetch(baseUrl, `/api/resumes/${resume.id}/content`, userA.cookie, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...baseValid, skills: c.skills }),
+      });
+
+      assert.equal(res.status, 400, `Case '${c.label}' must return 400`);
+      const body = await res.json();
+      assert.equal(body.error, "Validation failed", `Case '${c.label}' error must be 'Validation failed'`);
+      assert.ok(Array.isArray(body.fields), `Case '${c.label}' must return fields array`);
+    }
+  });
+
+  test("20. Duplicating a resume copies its skills", async () => {
+    const createRes = await authenticatedFetch(baseUrl, "/api/resumes", userA.cookie, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: "Original With Skills" }),
+    });
+    const resume = (await createRes.json()).resume;
+
+    const contentWithSkills = {
+      ...emptyContent(userA),
+      skills: [
+        {
+          id: "sk-1",
+          category: "Cloud",
+          items: ["AWS", "GCP", "Kubernetes"],
+        },
+      ],
+    };
+
+    await authenticatedFetch(baseUrl, `/api/resumes/${resume.id}/content`, userA.cookie, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(contentWithSkills),
+    });
+
+    const dupRes = await authenticatedFetch(baseUrl, `/api/resumes/${resume.id}/duplicate`, userA.cookie, {
+      method: "POST",
+    });
+    assert.equal(dupRes.status, 201);
+    const copy = (await dupRes.json()).resume;
+
+    assert.equal(copy.title, "Original With Skills (Copy)");
+    assert.deepEqual(copy.content.skills, contentWithSkills.skills);
+
+    const getCopyRes = await authenticatedFetch(baseUrl, `/api/resumes/${copy.id}`, userA.cookie);
+    assert.equal(getCopyRes.status, 200);
+    const getCopyBody = await getCopyRes.json();
+    assert.deepEqual(getCopyBody.resume.content.skills, contentWithSkills.skills);
   });
 });

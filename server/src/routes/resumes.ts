@@ -3,7 +3,7 @@ import { z } from "zod";
 import { rateLimit } from "express-rate-limit";
 import { query } from "../db";
 import { requireAuth } from "../middleware/requireAuth";
-import { resumeContentSchema, emptyContent } from "../schemas/resumeContent";
+import { resumeContentSchema, emptyContent, normalizeContent } from "../schemas/resumeContent";
 
 const resumesRouter = Router();
 
@@ -154,7 +154,7 @@ resumesRouter.post(
           title: row.title,
           createdAt: row.created_at,
           updatedAt: row.updated_at,
-          content: row.content,
+          content: normalizeContent(row.content),
         },
       });
     } catch (err) {
@@ -197,7 +197,7 @@ resumesRouter.get("/:id", async (req: Request, res: Response, next: NextFunction
         title: row.title,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
-        content: row.content,
+        content: normalizeContent(row.content),
       },
     });
   } catch (err) {
@@ -320,6 +320,7 @@ resumesRouter.post(
 
       const original = originalResult.rows[0];
       const newTitle = `${original.title} (Copy)`.slice(0, 100);
+      const contentToCopy = normalizeContent(original.content);
 
       // Atomic insert enforcing max 20 resumes limit
       const insertResult = await query<{
@@ -333,7 +334,7 @@ resumesRouter.post(
          SELECT $1, $2, $3::jsonb
          WHERE (SELECT count(*) FROM resumes WHERE user_id = $1 AND is_deleted = false) < 20
          RETURNING id, title, content, created_at, updated_at`,
-        [req.user!.id, newTitle, JSON.stringify(original.content)]
+        [req.user!.id, newTitle, JSON.stringify(contentToCopy)]
       );
 
       if (insertResult.rows.length === 0) {
@@ -348,7 +349,7 @@ resumesRouter.post(
           title: row.title,
           createdAt: row.created_at,
           updatedAt: row.updated_at,
-          content: row.content,
+          content: normalizeContent(row.content),
         },
       });
     } catch (err) {

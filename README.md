@@ -83,8 +83,8 @@ The migrate script tracks applied files in a `schema_migrations` table and is sa
 - `POST /api/resumes`: Creates a new resume with empty prefilled content.
 - `GET /api/resumes/:id`: Returns full details and content for a specific resume.
 - `PATCH /api/resumes/:id`: Renames a resume title.
-- `PUT /api/resumes/:id/content`: Validates and replaces resume content.
-- `POST /api/resumes/:id/duplicate`: Duplicates a resume with copied content and updated title.
+- `PUT /api/resumes/:id/content`: Validates and replaces resume content (includes optional `skills` with up to 15 groups, category up to 50 chars, and up to 40 items of max 40 chars; defaults to `[]`).
+- `POST /api/resumes/:id/duplicate`: Duplicates a resume with copied content (including skills) and updated title.
 - `DELETE /api/resumes/:id`: Soft deletes a resume.
 
 ## Deploy to Render

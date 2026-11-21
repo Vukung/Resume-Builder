@@ -120,6 +120,16 @@ const certificationItemSchema = z
   })
   .strict();
 
+const skillGroupSchema = z
+  .object({
+    id: z.string().trim().min(1, "ID is required").max(64, "ID must be at most 64 characters"),
+    category: z.string().trim().max(50, "Category must be at most 50 characters"),
+    items: z
+      .array(z.string().trim().max(40, "Skill item must be at most 40 characters"))
+      .max(40, "At most 40 items allowed per skill group"),
+  })
+  .strict();
+
 export const resumeContentSchema = z
   .object({
     schemaVersion: z.literal(1),
@@ -141,10 +151,24 @@ export const resumeContentSchema = z
       .array(certificationItemSchema)
       .max(30, "At most 30 certification items allowed")
       .refine(hasUniqueIds, { message: "Certification item IDs must be unique" }),
+    skills: z
+      .array(skillGroupSchema)
+      .max(15, "At most 15 skill groups allowed")
+      .refine(hasUniqueIds, { message: "Skill group IDs must be unique" })
+      .default([]),
   })
   .strict();
 
 export type ResumeContent = z.infer<typeof resumeContentSchema>;
+
+export function normalizeContent(stored: any): any {
+  if (stored && typeof stored === "object" && !Array.isArray(stored)) {
+    if (!("skills" in stored) || stored.skills === undefined || stored.skills === null) {
+      return { ...stored, skills: [] };
+    }
+  }
+  return stored;
+}
 
 export function emptyContent(user: { name?: string; email?: string }): ResumeContent {
   return {
@@ -161,5 +185,6 @@ export function emptyContent(user: { name?: string; email?: string }): ResumeCon
     experience: [],
     projects: [],
     certifications: [],
+    skills: [],
   };
 }
