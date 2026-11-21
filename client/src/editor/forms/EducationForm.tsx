@@ -112,6 +112,7 @@ export const EducationForm: React.FC<EducationFormProps> = ({
               <GradeInput
                 gradeType={item.gradeType}
                 gradeValue={item.gradeValue}
+                onChange={(type, val) => updateItem({ ...item, gradeType: type, gradeValue: val })}
                 onGradeTypeChange={(type) => updateItem({ ...item, gradeType: type })}
                 onGradeValueChange={(val) => updateItem({ ...item, gradeValue: val })}
                 help={

@@ -72,8 +72,10 @@ export function RepeatableList<T extends { id: string }>({
   };
 
   const handleUpdate = (index: number, updated: T) => {
-    const next = [...items];
+    const current = itemsRef.current;
+    const next = [...current];
     next[index] = updated;
+    itemsRef.current = next;
     onItemsChange(next);
   };
 

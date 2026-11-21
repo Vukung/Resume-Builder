@@ -3,8 +3,9 @@ import React, { useState, useEffect, useRef, ReactNode } from "react";
 interface GradeInputProps {
   gradeType: "percentage" | "cgpa";
   gradeValue: number | null;
-  onGradeTypeChange: (type: "percentage" | "cgpa") => void;
-  onGradeValueChange: (val: number | null) => void;
+  onGradeTypeChange?: (type: "percentage" | "cgpa") => void;
+  onGradeValueChange?: (val: number | null) => void;
+  onChange?: (type: "percentage" | "cgpa", val: number | null) => void;
   help?: ReactNode;
 }
 
@@ -13,6 +14,7 @@ export const GradeInput: React.FC<GradeInputProps> = ({
   gradeValue,
   onGradeTypeChange,
   onGradeValueChange,
+  onChange,
   help,
 }) => {
   const [rawText, setRawText] = useState<string>(() =>
@@ -56,16 +58,36 @@ export const GradeInput: React.FC<GradeInputProps> = ({
     setRawText(nextText);
     const { num } = validate(nextText, gradeType);
     lastEmittedValue.current = num;
-    onGradeValueChange(num);
+    if (onChange) {
+      onChange(gradeType, num);
+    } else {
+      onGradeValueChange?.(num);
+    }
   };
 
   const handleTypeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const nextType = e.target.value as "percentage" | "cgpa";
-    onGradeTypeChange(nextType);
     const { num } = validate(rawText, nextType);
     lastEmittedValue.current = num;
-    onGradeValueChange(num);
+    if (onChange) {
+      onChange(nextType, num);
+    } else {
+      onGradeTypeChange?.(nextType);
+      if (num !== gradeValue) {
+        onGradeValueChange?.(num);
+      }
+    }
   };
+
+  const trimmed = rawText.trim();
+  const numVal = Number(trimmed);
+  const showCgpaHint =
+    gradeType === "percentage" &&
+    trimmed !== "" &&
+    !isNaN(numVal) &&
+    Number.isFinite(numVal) &&
+    numVal > 0 &&
+    numVal < 10;
 
   return (
     <div className="space-y-1.5">
@@ -102,6 +124,12 @@ export const GradeInput: React.FC<GradeInputProps> = ({
           }`}
         />
       </div>
+
+      {showCgpaHint && (
+        <p className="text-xs text-foreground-muted mt-1">
+          That looks like a CGPA. Switch the grade type to CGPA if it is out of 10.
+        </p>
+      )}
 
       {error && (
         <div className="text-xs space-y-0.5 mt-1">
