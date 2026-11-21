@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { EditorPage } from "../pages/EditorPage";
@@ -22,6 +22,63 @@ describe("EditorPage", () => {
     projects: [],
     certifications: [],
     skills: [],
+  };
+
+  const fullContent: ResumeContent = {
+    schemaVersion: 1,
+    basics: {
+      fullName: "Priya Sharma",
+      email: "priya@example.com",
+      phone: "+91 98765 43210",
+      location: "Bengaluru, India",
+      links: [{ label: "Portfolio", url: "https://priya.dev" }],
+    },
+    summary: "Senior Frontend Engineer",
+    education: [
+      {
+        id: "edu-1",
+        institution: "Original University",
+        degree: "B.Tech Computer Science",
+        startDate: "2018-08",
+        endDate: "2022-05",
+        gradeType: "cgpa",
+        gradeValue: 9.2,
+      },
+    ],
+    skills: [
+      {
+        id: "sk-1",
+        category: "Frontend",
+        items: ["React", "TypeScript"],
+      },
+    ],
+    experience: [
+      {
+        id: "exp-1",
+        jobTitle: "Frontend Engineer",
+        company: "Tech Corp",
+        startDate: "2022-06",
+        endDate: "",
+        isCurrent: true,
+        bullets: ["Built features"],
+      },
+    ],
+    projects: [
+      {
+        id: "proj-1",
+        name: "Portfolio Site",
+        techStack: ["Next.js"],
+        link: "https://portfolio.dev",
+        bullets: ["Designed UI"],
+      },
+    ],
+    certifications: [
+      {
+        id: "cert-1",
+        name: "AWS Certified Developer",
+        issuer: "Amazon",
+      },
+    ],
   };
 
   beforeEach(() => {
@@ -79,6 +136,51 @@ describe("EditorPage", () => {
     expect(previewPanel.className).toContain("block");
     expect(editPanel).toBeInTheDocument();
     expect(previewPanel).toBeInTheDocument();
+  });
+
+  it("editing institution in a full fixture updates the preview text", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(api, "getResume").mockResolvedValue({
+      resume: {
+        id: "res-full",
+        title: "Full Resume",
+        content: fullContent,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/resume/res-full"]}>
+        <Routes>
+          <Route path="/resume/:id" element={<EditorPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { level: 1, name: "Full Resume" })).toBeInTheDocument();
+    });
+
+    // Preview initially contains Original University
+    expect(screen.getByText("Original University")).toBeInTheDocument();
+
+    // Expand the Education section card inside the edit panel
+    const editPanel = screen.getByRole("tabpanel", { name: /edit/i });
+    const educationHeading = within(editPanel).getByRole("heading", { level: 2, name: /education/i });
+    const educationCard = educationHeading.closest("div")?.parentElement;
+    const expandBtn = educationCard?.querySelector("button[aria-expanded='false']") as HTMLButtonElement;
+    expect(expandBtn).toBeDefined();
+    await user.click(expandBtn);
+
+    // Edit institution
+    const institutionInput = within(editPanel).getByDisplayValue("Original University");
+    await user.clear(institutionInput);
+    await user.type(institutionInput, "Stanford University");
+
+    // Preview should reflect updated institution
+    const previewPanel = screen.getByRole("tabpanel", { name: /preview/i });
+    expect(within(previewPanel).getByText("Stanford University")).toBeInTheDocument();
   });
 
   it("shows friendly not found page when resume returns 404", async () => {

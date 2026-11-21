@@ -4,6 +4,11 @@ import { useEditorState } from "../editor/hooks/useEditorState";
 import { EditorHeader } from "../editor/components/EditorHeader";
 import { BasicsForm } from "../editor/forms/BasicsForm";
 import { SummaryForm } from "../editor/forms/SummaryForm";
+import { EducationForm } from "../editor/forms/EducationForm";
+import { SkillsForm } from "../editor/forms/SkillsForm";
+import { ExperienceForm } from "../editor/forms/ExperienceForm";
+import { ProjectsForm } from "../editor/forms/ProjectsForm";
+import { CertificationsForm } from "../editor/forms/CertificationsForm";
 import { PreviewPane } from "../editor/preview/PreviewPane";
 import { Loader2, FileQuestion, ArrowLeft, Edit3, Eye } from "lucide-react";
 
@@ -157,9 +162,14 @@ export const EditorPage: React.FC = () => {
             activeTab === "edit" ? "block" : "hidden lg:block"
           }`}
         >
-          <div className="max-w-xl mx-auto">
+          <div className="max-w-xl mx-auto space-y-4">
             <BasicsForm basics={state.content.basics} updateContent={updateContent} />
             <SummaryForm summary={state.content.summary} updateContent={updateContent} />
+            <EducationForm education={state.content.education || []} updateContent={updateContent} />
+            <SkillsForm skills={state.content.skills || []} updateContent={updateContent} />
+            <ExperienceForm experience={state.content.experience || []} updateContent={updateContent} />
+            <ProjectsForm projects={state.content.projects || []} updateContent={updateContent} />
+            <CertificationsForm certifications={state.content.certifications || []} updateContent={updateContent} />
           </div>
         </div>
 

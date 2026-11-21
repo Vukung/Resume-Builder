@@ -11,28 +11,12 @@ interface BasicsFormProps {
 }
 
 const TOOLTIPS = {
-  fullName: {
-    text: "Use the name on your official documents and LinkedIn profile. Recruiters and ATS software match your resume against your application, so keep it consistent.",
-    example: "Aarav Sharma",
-  },
-  email: {
-    text: "Use a professional address, ideally some form of your name. Check it regularly because recruiters reply here.",
-    example: "aarav.sharma@gmail.com",
-  },
-  phone: {
-    text: "Include your country code so recruiters outside your city can call. Add a number you actually answer.",
-    example: "+91 98765 43210",
-  },
-  location: {
-    text: "City and state or country is enough. Skip your full street address. If you are open to relocating or remote work, mention it in your summary.",
-    example: "Pune, India",
-  },
-  linkLabel: {
-    text: "A short name for the link, such as LinkedIn, GitHub, or Portfolio.",
-  },
-  linkUrl: {
-    text: "Paste the full address starting with https://. Only add links to work that is public and that you want recruiters to open.",
-  },
+  fullName: { text: "Use the name on your official documents and LinkedIn profile. Recruiters and ATS software match your resume against your application, so keep it consistent.", example: "Aarav Sharma" },
+  email: { text: "Use a professional address, ideally some form of your name. Check it regularly because recruiters reply here.", example: "aarav.sharma@gmail.com" },
+  phone: { text: "Include your country code so recruiters outside your city can call. Add a number you actually answer.", example: "+91 98765 43210" },
+  location: { text: "City and state or country is enough. Skip your full street address. If you are open to relocating or remote work, mention it in your summary.", example: "Pune, India" },
+  linkLabel: { text: "A short name for the link, such as LinkedIn, GitHub, or Portfolio." },
+  linkUrl: { text: "Paste the full address starting with https://. Only add links to work that is public and that you want recruiters to open." },
 };
 
 export const BasicsForm: React.FC<BasicsFormProps> = ({ basics, updateContent }) => {
