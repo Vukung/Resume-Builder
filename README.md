@@ -4,7 +4,7 @@ A resume builder with a live side-by-side preview. This repo contains the backen
 
 ## Local Setup
 
-1. Install Node.js 20 or later.
+1. Install Node.js 24.x.
 2. Clone the repo and navigate to `server/`.
 3. Run `npm install`.
 4. Copy `.env.example` to `.env` and fill in `DATABASE_URL` with your Neon pooled connection string.
