@@ -26,7 +26,7 @@ The migrate script tracks applied files in a `schema_migrations` table and is sa
 
 1. Push the repo to GitHub.
 2. Create a new Web Service on Render and connect the repo.
-3. Render will detect `render.yaml` and configure the service automatically.
+3. Render will detect `render.yaml` and configure the service automatically (Build Command: `npm ci --include=dev && npm run build`, Start Command: `npm start`).
 4. Set `DATABASE_URL` to your Neon connection string and `CLIENT_ORIGIN` to your frontend URL in the Render dashboard.
 5. Run migrations manually from your local machine against the Neon database before deploying:
    ```
