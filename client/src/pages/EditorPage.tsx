@@ -10,6 +10,9 @@ import { ExperienceForm } from "../editor/forms/ExperienceForm";
 import { ProjectsForm } from "../editor/forms/ProjectsForm";
 import { CertificationsForm } from "../editor/forms/CertificationsForm";
 import { PreviewPane } from "../editor/preview/PreviewPane";
+import { PrintPortal } from "../editor/print/PrintPortal";
+import { usePrintListener } from "../editor/print/usePrintListener";
+import "../editor/print/print.css";
 import { Loader2, FileQuestion, ArrowLeft, Edit3, Eye } from "lucide-react";
 
 export const EditorPage: React.FC = () => {
@@ -20,6 +23,7 @@ export const EditorPage: React.FC = () => {
   const previewTabRef = useRef<HTMLButtonElement>(null);
 
   const { state, updateContent, flush, retryNow, renameTitle } = useEditorState(id || "");
+  const isPrinting = usePrintListener(state.content, state.title);
 
   const handleBack = async () => {
     if (state.saveState !== "saved") {
@@ -98,6 +102,7 @@ export const EditorPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-surface flex flex-col h-screen overflow-hidden">
+      {state.content && <PrintPortal content={state.content} isPrinting={isPrinting} />}
       <EditorHeader
         title={state.title}
         saveState={state.saveState}

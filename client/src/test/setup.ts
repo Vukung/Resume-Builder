@@ -8,3 +8,9 @@ if (typeof globalThis.crypto === "undefined") {
 if (typeof globalThis.crypto.randomUUID !== "function") {
   globalThis.crypto.randomUUID = randomUUID;
 }
+
+if (typeof document !== "undefined" && !document.getElementById("print-root")) {
+  const printRoot = document.createElement("div");
+  printRoot.id = "print-root";
+  document.body.appendChild(printRoot);
+}

@@ -1,6 +1,7 @@
 import React, { memo } from "react";
 import { ResumeContent, EducationItem, ExperienceItem, ProjectItem, CertificationItem, SkillGroup } from "../../api/types";
-import { formatMonth } from "../utils/formatMonth";
+import { isContentEmpty } from "./isContentEmpty";
+import { formatDates, cleanUrlDisplay } from "./documentUtils";
 import "./resumeDocument.css";
 
 export const SECTION_ORDER = [
@@ -14,25 +15,20 @@ export const SECTION_ORDER = [
 
 export type SectionKey = typeof SECTION_ORDER[number];
 
-function formatDates(startDate?: string, endDate?: string, isCurrent?: boolean): string {
-  const start = formatMonth(startDate);
-  const end = isCurrent ? "Present" : formatMonth(endDate);
-  if (start && end) return `${start} - ${end}`;
-  if (start) return start;
-  if (end) return end;
-  return "";
-}
-
-function cleanUrlDisplay(url: string): string {
-  return url.replace(/^https?:\/\//i, "").replace(/\/$/, "");
-}
-
 interface ResumeDocumentProps {
   content: ResumeContent;
 }
 
 export const ResumeDocument: React.FC<ResumeDocumentProps> = memo(({ content }) => {
   const { basics, summary, education, experience, projects, certifications, skills } = content;
+
+  if (isContentEmpty(content)) {
+    return (
+      <div className="resume-document resume-document-empty">
+        <p>Start typing and your resume appears here.</p>
+      </div>
+    );
+  }
 
   // Contact items
   const contactParts: React.ReactNode[] = [];
@@ -62,90 +58,44 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = memo(({ content }) 
     }
   });
 
-  // Filter sections with meaningful content
-  const hasName = Boolean(basics.fullName.trim());
-  const hasContact = contactParts.length > 0;
-  const hasSummary = Boolean(summary.trim());
-
   const validEducation = (education || []).filter(
     (e: EducationItem) => e.institution.trim() || e.degree.trim() || e.startDate.trim() || e.endDate.trim()
   );
-
-  const validSkills = (skills || []).filter((s: SkillGroup) => {
-    const validItems = (s.items || []).filter((item) => item.trim() !== "");
-    return validItems.length > 0;
-  });
-
+  const validSkills = (skills || []).filter((s: SkillGroup) => (s.items || []).some((item) => item.trim() !== ""));
   const validExperience = (experience || []).filter(
     (e: ExperienceItem) => e.jobTitle.trim() || e.company.trim() || (e.bullets && e.bullets.some((b) => b.trim() !== ""))
   );
-
   const validProjects = (projects || []).filter(
     (p: ProjectItem) => p.name.trim() || (p.techStack && p.techStack.some((t) => t.trim() !== "")) || (p.bullets && p.bullets.some((b) => b.trim() !== ""))
   );
-
-  const validCertifications = (certifications || []).filter(
-    (c: CertificationItem) => c.name.trim() || c.issuer.trim()
-  );
-
-  const isCompletelyEmpty =
-    !hasName &&
-    !hasContact &&
-    !hasSummary &&
-    validEducation.length === 0 &&
-    validSkills.length === 0 &&
-    validExperience.length === 0 &&
-    validProjects.length === 0 &&
-    validCertifications.length === 0;
-
-  if (isCompletelyEmpty) {
-    return (
-      <div className="resume-document resume-document-empty">
-        <p>Start typing and your resume appears here.</p>
-      </div>
-    );
-  }
+  const validCertifications = (certifications || []).filter((c: CertificationItem) => c.name.trim() || c.issuer.trim());
 
   const renderSection = (key: SectionKey) => {
     switch (key) {
-      case "summary": {
-        if (!hasSummary) return null;
-        return (
-          <section key="sec-summary">
-            <h2>Summary</h2>
-            <p>{summary.trim()}</p>
-          </section>
-        );
-      }
-      case "education": {
+      case "summary":
+        if (!summary.trim()) return null;
+        return <section key="sec-summary"><h2>Summary</h2><p>{summary.trim()}</p></section>;
+      case "education":
         if (validEducation.length === 0) return null;
         return (
           <section key="sec-education">
             <h2>Education</h2>
             {validEducation.map((edu) => {
               const dates = formatDates(edu.startDate, edu.endDate);
-              const gradeText =
-                edu.gradeValue !== null && typeof edu.gradeValue === "number"
-                  ? edu.gradeType === "cgpa"
-                    ? `CGPA: ${edu.gradeValue}/10`
-                    : `Percentage: ${edu.gradeValue}%`
-                  : "";
+              const gradeText = edu.gradeValue !== null && typeof edu.gradeValue === "number"
+                ? edu.gradeType === "cgpa" ? `CGPA: ${edu.gradeValue}/10` : `Percentage: ${edu.gradeValue}%`
+                : "";
               const subline = [edu.degree.trim(), gradeText].filter(Boolean).join(" | ");
-
               return (
                 <div key={edu.id || edu.institution} className="entry-block">
-                  <div className="item-row">
-                    <span className="item-title">{edu.institution}</span>
-                    {dates && <span className="item-date">{dates}</span>}
-                  </div>
+                  <div className="item-row"><span className="item-title">{edu.institution}</span>{dates && <span className="item-date">{dates}</span>}</div>
                   {subline && <p className="item-subline">{subline}</p>}
                 </div>
               );
             })}
           </section>
         );
-      }
-      case "skills": {
+      case "skills":
         if (validSkills.length === 0) return null;
         return (
           <section key="sec-skills">
@@ -155,20 +105,13 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = memo(({ content }) 
               const cat = sg.category.trim();
               return (
                 <p key={sg.id || cat} className="skills-line">
-                  {cat ? (
-                    <>
-                      <span className="item-title">{cat}:</span> {items}
-                    </>
-                  ) : (
-                    <span>{items}</span>
-                  )}
+                  {cat ? <><span className="item-title">{cat}:</span> {items}</> : <span>{items}</span>}
                 </p>
               );
             })}
           </section>
         );
-      }
-      case "experience": {
+      case "experience":
         if (validExperience.length === 0) return null;
         return (
           <section key="sec-experience">
@@ -178,25 +121,15 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = memo(({ content }) 
               const validBullets = (exp.bullets || []).filter((b) => b.trim() !== "");
               return (
                 <div key={exp.id || exp.jobTitle} className="entry-block">
-                  <div className="item-row">
-                    <span className="item-title">{exp.jobTitle}</span>
-                    {dates && <span className="item-date">{dates}</span>}
-                  </div>
+                  <div className="item-row"><span className="item-title">{exp.jobTitle}</span>{dates && <span className="item-date">{dates}</span>}</div>
                   {exp.company && <p className="item-subline">{exp.company}</p>}
-                  {validBullets.length > 0 && (
-                    <ul>
-                      {validBullets.map((b, idx) => (
-                        <li key={idx}>{b}</li>
-                      ))}
-                    </ul>
-                  )}
+                  {validBullets.length > 0 && <ul>{validBullets.map((b, idx) => <li key={idx}>{b}</li>)}</ul>}
                 </div>
               );
             })}
           </section>
         );
-      }
-      case "projects": {
+      case "projects":
         if (validProjects.length === 0) return null;
         return (
           <section key="sec-projects">
@@ -207,47 +140,32 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = memo(({ content }) 
               return (
                 <div key={proj.id || proj.name} className="entry-block">
                   <div className="item-row">
-                    <span>
-                      <span className="item-title">{proj.name}</span>
-                      {tech && <span> | {tech}</span>}
-                    </span>
-                    {proj.link && (
-                      <span className="item-date">
-                        <a href={proj.link} target="_blank" rel="noreferrer">
-                          {cleanUrlDisplay(proj.link)}
-                        </a>
-                      </span>
-                    )}
+                    <span><span className="item-title">{proj.name}</span>{tech && <span> | {tech}</span>}</span>
+                    {proj.link && <span className="item-date"><a href={proj.link} target="_blank" rel="noreferrer">{cleanUrlDisplay(proj.link)}</a></span>}
                   </div>
-                  {validBullets.length > 0 && (
-                    <ul>
-                      {validBullets.map((b, idx) => (
-                        <li key={idx}>{b}</li>
-                      ))}
-                    </ul>
-                  )}
+                  {validBullets.length > 0 && <ul>{validBullets.map((b, idx) => <li key={idx}>{b}</li>)}</ul>}
                 </div>
               );
             })}
           </section>
         );
-      }
-      case "certifications": {
+      case "certifications":
         if (validCertifications.length === 0) return null;
         return (
           <section key="sec-certifications">
             <h2>Certifications</h2>
             {validCertifications.map((cert) => (
               <p key={cert.id || cert.name} className="item-subline">
-                <span className="item-title">{cert.name}</span>
-                {cert.issuer && <span> - {cert.issuer}</span>}
+                <span className="item-title">{cert.name}</span>{cert.issuer && <span> - {cert.issuer}</span>}
               </p>
             ))}
           </section>
         );
-      }
     }
   };
+
+  const hasName = Boolean(basics.fullName.trim());
+  const hasContact = contactParts.length > 0;
 
   return (
     <div className="resume-document">

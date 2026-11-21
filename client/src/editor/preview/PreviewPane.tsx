@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { ResumeContent } from "../../api/types";
 import { ResumeDocument } from "./ResumeDocument";
+import { PreviewToolbar } from "./PreviewToolbar";
 
 interface PreviewPaneProps {
   content: ResumeContent;
@@ -51,6 +52,7 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({ content }) => {
       className="w-full h-full overflow-y-auto bg-surface p-4 flex flex-col items-center"
       aria-label="Resume live preview"
     >
+      <PreviewToolbar content={content} />
       <div
         style={{
           width: SHEET_WIDTH_PX * scale,

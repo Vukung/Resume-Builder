@@ -1,0 +1,54 @@
+#print-root {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 16mm;
+  }
+
+  #root,
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+
+  #print-root {
+    display: block !important;
+  }
+
+  #print-root .resume-document {
+    width: auto;
+    min-height: 0;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+    border: none;
+    background: white;
+  }
+
+  #print-root .resume-document a {
+    color: inherit;
+    text-decoration: underline;
+  }
+
+  /* Browsers ignore break-inside: avoid rules for an item taller than a page */
+  #print-root .resume-document .entry-block,
+  #print-root .resume-document .skills-line,
+  #print-root .resume-document .item-subline {
+    break-inside: avoid;
+  }
+
+  #print-root .resume-document h2 {
+    break-after: avoid;
+  }
+
+  #print-root .resume-document li {
+    break-inside: avoid;
+  }
+
+  #print-root .resume-document p {
+    orphans: 3;
+    widows: 3;
+  }
+}

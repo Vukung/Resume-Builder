@@ -107,7 +107,7 @@ describe("useEditorState Autosave", () => {
     expect(result.current.state.saveState).toBe("saved");
   });
 
-  it("handles save failure with error state, 3 retries 5s apart, then stops and allows retryNow", async () => {
+  it("Save failure: handles save failure with error state, 3 retries 5s apart, then stops and allows retryNow", async () => {
     const saveSpy = vi.spyOn(api, "saveContent").mockRejectedValue(new Error("Network disconnect"));
 
     const { result } = renderHook(() => useEditorState("res-1"));

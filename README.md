@@ -50,6 +50,16 @@ npm test
 
 The resume editor (`/resume/:id`) features a side-by-side workspace with collapsible section forms (Basics, Summary, Education, Skills, Experience, Projects, Certifications) and an ATS-friendly, semantic preview renderer styled with standard print units. Repeatable list sections support adding, removing with a 6-second Undo toast, and moving items up and down with disabled boundaries. Content edits automatically autosave with a 1500ms debounce, sequencing updates during in-flight saves to prevent overlapping requests. The editor flushes immediately on visibility change or manual save (`Ctrl+S`/`Cmd+S`), and retries failed saves automatically up to 3 times with exponential backoff before offering a manual retry button.
 
+### Print and PDF Export
+
+The editor provides a direct "Print or save as PDF" toolbar button as well as native browser shortcut support (`Ctrl+P` / `Cmd+P`).
+
+- **Architecture**: In-memory content renders into a clean `#print-root` DOM portal during print via `beforeprint` / `afterprint` window listeners. Only one layout component (`ResumeDocument`) exists in the codebase for both live screen preview and print output.
+- **Print Stylesheet & Margins**: Styled via `@media print` with standard `@page { size: A4; margin: 14mm 16mm; }`. All app UI (`#root` and toast containers) are hidden, while section headings (`break-after: avoid`), entries, skills lines, and bullet items (`break-inside: avoid`) prevent awkward page cuts. Paragraphs enforce `orphans: 3` and `widows: 3`.
+- **File Name**: During print, `document.title` temporarily changes to `<Full Name> - Resume` (falling back to `<Resume Title> - Resume` if the name is blank), so the browser automatically suggests a clean PDF file name when choosing "Save as PDF".
+- **Headers & Footers**: Browser print dialogs default to adding date/URL headers and footers; turning off "Headers and footers" in the print settings yields clean margins.
+- **Selectable Text**: Exported PDFs contain genuine selectable text and semantic HTML elements (headings, paragraphs, lists), remaining fully ATS-parseable.
+
 ## Server Setup
 
 1. Install Node.js 24.x.
