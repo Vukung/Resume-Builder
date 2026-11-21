@@ -1,8 +1,52 @@
 # Resume Rocket
 
-A resume builder with a live side-by-side preview. This repo contains the backend server (Phase 1).
+A resume builder with a live side-by-side preview.
 
-## Local Setup
+## Client
+
+The `client/` folder contains the frontend application built with Vite, React, TypeScript, and Tailwind CSS.
+
+### Installation
+
+```bash
+cd client
+npm install
+```
+
+### Environment Variables
+
+Copy `.env.example` to `.env`:
+
+```bash
+VITE_API_URL=http://localhost:4000
+```
+
+`VITE_API_URL` configures the backend API base URL (defaults to `http://localhost:4000` if omitted).
+
+### Running Locally (Two Terminals)
+
+In terminal 1 (backend server):
+```bash
+cd server
+npm run dev
+```
+
+In terminal 2 (frontend client):
+```bash
+cd client
+npm run dev
+```
+
+The frontend dev server runs at `http://localhost:5173`.
+
+### Running Tests
+
+```bash
+cd client
+npm test
+```
+
+## Server Setup
 
 1. Install Node.js 24.x.
 2. Clone the repo and navigate to `server/`.
