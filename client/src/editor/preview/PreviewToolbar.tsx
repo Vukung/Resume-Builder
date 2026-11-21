@@ -41,7 +41,7 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({ content }) => {
         </button>
         <InfoTooltip
           fieldLabel="Print or save as PDF"
-          text="Your browser's print dialog opens. Choose Save as PDF as the destination. If page headers or footers such as the date or web address appear, turn off Headers and footers under More settings, and keep Margins on Default."
+          text="Your browser's print dialog opens. Choose Save as PDF as the destination. In Chrome and Edge no extra settings are needed. In other browsers, if a date or web address appears at the top or bottom, turn off Headers and footers in the print settings."
         />
       </div>
     </div>
