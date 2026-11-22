@@ -186,7 +186,7 @@ export const EditorPage: React.FC = () => {
             activeTab === "preview" ? "block" : "hidden lg:block"
           }`}
         >
-          <PreviewPane content={state.content} />
+          <PreviewPane content={state.content} resumeTitle={state.title} />
         </div>
       </main>
     </div>

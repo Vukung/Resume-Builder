@@ -5,11 +5,12 @@ import { PreviewToolbar } from "./PreviewToolbar";
 
 interface PreviewPaneProps {
   content: ResumeContent;
+  resumeTitle?: string;
 }
 
 const SHEET_WIDTH_PX = 794; // 210mm at 96 DPI
 
-export const PreviewPane: React.FC<PreviewPaneProps> = ({ content }) => {
+export const PreviewPane: React.FC<PreviewPaneProps> = ({ content, resumeTitle }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -52,7 +53,7 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({ content }) => {
       className="w-full h-full overflow-y-auto bg-surface p-4 flex flex-col items-center"
       aria-label="Resume live preview"
     >
-      <PreviewToolbar content={content} />
+      <PreviewToolbar content={content} resumeTitle={resumeTitle} />
       <div
         style={{
           width: SHEET_WIDTH_PX * scale,

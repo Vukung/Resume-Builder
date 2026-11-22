@@ -52,13 +52,12 @@ The resume editor (`/resume/:id`) features a side-by-side workspace with collaps
 
 ### Print and PDF Export
 
-The editor provides a direct "Print or save as PDF" toolbar button as well as native browser shortcut support (`Ctrl+P` / `Cmd+P`).
+The editor provides a one-click "Download PDF" toolbar button as well as native browser shortcut support (`Ctrl+P` / `Cmd+P`).
 
-- **Architecture**: In-memory content renders into a clean `#print-root` DOM portal during print via `beforeprint` / `afterprint` window listeners. Only one layout component (`ResumeDocument`) exists in the codebase for both live screen preview and print output.
-- **Print Stylesheet & Margins**: Styled via `@media print` with standard `@page { size: A4; margin: 14mm 16mm; }`. All app UI (`#root` and toast containers) are hidden, while section headings (`break-after: avoid`), entries, skills lines, and bullet items (`break-inside: avoid`) prevent awkward page cuts. Paragraphs enforce `orphans: 3` and `widows: 3`.
-- **File Name**: During print, `document.title` temporarily changes to `<Full Name> - Resume` (falling back to `<Resume Title> - Resume` if the name is blank), so the browser automatically suggests a clean PDF file name when choosing "Save as PDF".
-- **Headers & Footers**: Browser print dialogs default to adding date/URL headers and footers; turning off "Headers and footers" in the print settings yields clean margins.
-- **Selectable Text**: Exported PDFs contain genuine selectable text and semantic HTML elements (headings, paragraphs, lists), remaining fully ATS-parseable.
+- **Download PDF**: Generates a clean PDF file named `<Full Name> - Resume.pdf` with real selectable text and no browser headers or footers. The PDF library (`@react-pdf/renderer`) is loaded lazily via dynamic `import()` only when the user clicks Download, keeping the main application bundle lean.
+- **Shared Resume Model**: Both the on-screen live preview and the PDF export are built from a single shared model (`src/editor/shared/resumeModel.ts`), guaranteeing identical section ordering, content filtering, date formats, link handling, and grade rules across both views without drift.
+- **Typography & Layout**: The PDF document is formatted on standard A4 using built-in Helvetica and Helvetica-Bold fonts with 10.5pt base text, matching the on-screen preview margins (40pt vertical, 45pt horizontal). Section headers keep with their first entry, and bullets and entry headers avoid splitting across pages.
+- **Browser Print Dialog**: Pressing `Ctrl+P` or `Cmd+P` continues to trigger the browser's native print dialog using the print stylesheet and DOM portal (`#print-root`), allowing printing or saving through the browser if preferred.
 
 ## Server Setup
 

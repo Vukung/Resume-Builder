@@ -123,34 +123,7 @@ describe("Print and PDF Export (Phase 6)", () => {
     expect(document.title).toBe(savedTitle);
   });
 
-  it("3. clicking Print button calls window.print (disabled when empty, enabled otherwise)", async () => {
-    const user = userEvent.setup();
-    const printSpy = vi.fn();
-    window.print = printSpy;
-
-    vi.spyOn(api, "getResume").mockResolvedValue({
-      resume: { id: "res-empty", title: "Empty Resume", content: emptyContent, createdAt: "", updatedAt: "" },
-    });
-    const { unmount } = renderEditor("res-empty");
-    await waitFor(() => expect(screen.getByRole("button", { name: /^print or save as pdf$/i })).toBeInTheDocument());
-    const emptyBtn = screen.getByRole("button", { name: /^print or save as pdf$/i });
-    expect(emptyBtn).toBeDisabled();
-    expect(emptyBtn).toHaveAttribute("title", "Add some content first");
-    unmount();
-
-    vi.spyOn(api, "getResume").mockResolvedValue({
-      resume: { id: "res-pop", title: "Populated Resume", content: populatedContent, createdAt: "", updatedAt: "" },
-    });
-    renderEditor("res-pop");
-    await waitFor(() => expect(screen.getByRole("button", { name: /^print or save as pdf$/i })).toBeInTheDocument());
-    const enabledBtn = screen.getByRole("button", { name: /^print or save as pdf$/i });
-    expect(enabledBtn).not.toBeDisabled();
-
-    await user.click(enabledBtn);
-    expect(printSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it("4. isContentEmpty returns true for fully empty content and false when any text exists", () => {
+  it("3. isContentEmpty returns true for fully empty content and false when any text exists", () => {
     expect(isContentEmpty(emptyContent)).toBe(true);
     expect(isContentEmpty({ ...emptyContent, basics: { ...emptyContent.basics, fullName: "   " } })).toBe(true);
     expect(isContentEmpty({ ...emptyContent, basics: { ...emptyContent.basics, fullName: "Maya" } })).toBe(false);
@@ -164,13 +137,13 @@ describe("Print and PDF Export (Phase 6)", () => {
     expect(isContentEmpty({ ...emptyContent, certifications: [{ id: "1", name: "GCP", issuer: "" }] })).toBe(false);
   });
 
-  it("5. print stylesheet contains @page with size: A4, break-inside: avoid, and hides app root", () => {
+  it("4. print stylesheet contains @page with size: A4, break-inside: avoid, and hides app root", () => {
     expect(printCss).toMatch(/@page\s*\{[^}]*size:\s*A4/i);
     expect(printCss).toMatch(/break-inside:\s*avoid/i);
     expect(printCss).toMatch(/#root[^{]*\{[^}]*display:\s*none/i);
   });
 
-  it("6. listeners are removed on unmount", async () => {
+  it("5. listeners are removed on unmount", async () => {
     vi.spyOn(api, "getResume").mockResolvedValue({
       resume: { id: "res-unmount", title: "Unmount Test", content: populatedContent, createdAt: "", updatedAt: "" },
     });

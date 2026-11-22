@@ -1,29 +1,50 @@
-import React from "react";
-import { Printer } from "lucide-react";
+import React, { useState } from "react";
+import { Download, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { ResumeContent } from "../../api/types";
 import { isContentEmpty } from "./isContentEmpty";
 import { InfoTooltip } from "../components/InfoTooltip";
+import { buildResumeModel } from "../shared/resumeModel";
+import { buildPdfFileName } from "../utils/pdfFileName";
 
 interface PreviewToolbarProps {
   content: ResumeContent;
+  resumeTitle?: string;
 }
 
-export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({ content }) => {
+export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({ content, resumeTitle }) => {
+  const [isGenerating, setIsGenerating] = useState(false);
   const empty = isContentEmpty(content);
 
-  const handlePrint = async () => {
-    if (empty) return;
+  const handleDownload = async () => {
+    if (empty || isGenerating) return;
+    setIsGenerating(true);
+
     try {
-      if (typeof document !== "undefined" && document.fonts && document.fonts.ready) {
-        await Promise.race([
-          document.fonts.ready,
-          new Promise((resolve) => setTimeout(resolve, 2000)),
-        ]);
-      }
+      const [{ pdf }, { ResumePdf }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("../pdf/ResumePdf"),
+      ]);
+
+      const model = buildResumeModel(content);
+      const blob = await pdf(
+        (<ResumePdf model={model} resumeTitle={resumeTitle} /> as unknown) as React.ReactElement<
+          import("@react-pdf/renderer").DocumentProps
+        >
+      ).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = buildPdfFileName(content.basics?.fullName, resumeTitle);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     } catch {
-      // Continue even if fonts.ready fails
+      toast.error("Could not create the PDF. Please try again.");
+    } finally {
+      setIsGenerating(false);
     }
-    window.print();
   };
 
   return (
@@ -31,17 +52,22 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({ content }) => {
       <div className="inline-flex items-center">
         <button
           type="button"
-          onClick={handlePrint}
-          disabled={empty}
+          onClick={handleDownload}
+          disabled={empty || isGenerating}
+          aria-busy={isGenerating}
           title={empty ? "Add some content first" : undefined}
           className="inline-flex items-center gap-2 px-3 py-1.5 bg-surface-card border border-border text-foreground hover:bg-surface-hover hover:border-border-hover disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium rounded-md shadow-2xs transition-colors focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
         >
-          <Printer className="w-3.5 h-3.5 text-foreground-muted" />
-          <span>Print or save as PDF</span>
+          {isGenerating ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-foreground-muted" />
+          ) : (
+            <Download className="w-3.5 h-3.5 text-foreground-muted" />
+          )}
+          <span>{isGenerating ? "Preparing PDF..." : "Download PDF"}</span>
         </button>
         <InfoTooltip
-          fieldLabel="Print or save as PDF"
-          text="Your browser's print dialog opens. Choose Save as PDF as the destination. If page headers or footers such as the date or web address appear, turn off Headers and footers under More settings, and keep Margins on Default."
+          fieldLabel="Download PDF"
+          text="Downloads your resume as a PDF file with selectable text that applicant tracking systems can read. Press Ctrl+P or Cmd+P if you prefer your browser's print dialog."
         />
       </div>
     </div>
