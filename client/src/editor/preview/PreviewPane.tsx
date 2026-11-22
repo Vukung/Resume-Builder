@@ -58,7 +58,6 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({ content }) => {
           width: SHEET_WIDTH_PX * scale,
           height: scaledHeight !== undefined ? scaledHeight : "auto",
           position: "relative",
-          overflow: "hidden",
         }}
         className="shadow-md rounded-xs transition-all"
       >

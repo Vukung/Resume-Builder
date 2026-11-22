@@ -139,10 +139,17 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = memo(({ content }) 
               const validBullets = (proj.bullets || []).filter((b) => b.trim() !== "");
               return (
                 <div key={proj.id || proj.name} className="entry-block">
-                  <div className="item-row">
-                    <span><span className="item-title">{proj.name}</span>{tech && <span> | {tech}</span>}</span>
-                    {proj.link && <span className="item-date"><a href={proj.link} target="_blank" rel="noreferrer">{cleanUrlDisplay(proj.link)}</a></span>}
-                  </div>
+                  <p className="project-title-line">
+                    <span className="item-title">{proj.name}</span>
+                    {tech && <span> | {tech}</span>}
+                  </p>
+                  {proj.link && (
+                    <p className="project-link-line">
+                      <a href={proj.link} target="_blank" rel="noreferrer">
+                        {cleanUrlDisplay(proj.link)}
+                      </a>
+                    </p>
+                  )}
                   {validBullets.length > 0 && <ul>{validBullets.map((b, idx) => <li key={idx}>{b}</li>)}</ul>}
                 </div>
               );

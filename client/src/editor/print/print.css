@@ -43,6 +43,11 @@
     break-after: avoid;
   }
 
+  #print-root .resume-document .project-title-line,
+  #print-root .resume-document .project-link-line {
+    break-after: avoid;
+  }
+
   #print-root .resume-document li {
     break-inside: avoid;
   }
