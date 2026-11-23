@@ -2,6 +2,7 @@ import { Server } from "node:http";
 import crypto from "node:crypto";
 import { app } from "../src/app";
 import { query, pool } from "../src/db";
+import { DEMO_EMAIL_DOMAIN } from "../src/demo/constants";
 
 let ipCounter = 1;
 
@@ -34,11 +35,21 @@ export async function deleteUsersByIds(ids: string[]): Promise<void> {
   }
 }
 
+export async function cleanupDemoUsers(): Promise<void> {
+  await query(
+    "DELETE FROM users WHERE email LIKE '%@' || $1",
+    [DEMO_EMAIL_DOMAIN]
+  );
+}
+
 export async function cleanupTestUsers(server?: Server, userIds?: string[]): Promise<void> {
   if (userIds && userIds.length > 0) {
     await deleteUsersByIds(userIds);
   } else {
-    await query("DELETE FROM users WHERE email LIKE '%@example.invalid'");
+    await query(
+      "DELETE FROM users WHERE email LIKE '%@example.invalid' OR email LIKE '%@' || $1",
+      [DEMO_EMAIL_DOMAIN]
+    );
   }
   if (server) {
     await new Promise<void>((resolve, reject) => {
@@ -52,6 +63,7 @@ export interface TestUser {
   id: string;
   email: string;
   name: string;
+  isDemo: boolean;
   cookie: string;
 }
 
@@ -83,12 +95,15 @@ export async function signupUser(
     throw new Error("No rr_session cookie in signup response");
   }
 
-  const data = (await res.json()) as { user: { id: string; email: string; name: string } };
+  const data = (await res.json()) as {
+    user: { id: string; email: string; name: string; isDemo: boolean };
+  };
 
   return {
     id: data.user.id,
     email: data.user.email,
     name: data.user.name,
+    isDemo: data.user.isDemo,
     cookie: match[1],
   };
 }

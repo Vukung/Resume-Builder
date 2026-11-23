@@ -1,14 +1,15 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { rateLimit } from "express-rate-limit";
 import { query } from "../db";
 import { setSessionCookie, clearSessionCookie } from "../utils/cookies";
 import { requireAuth } from "../middleware/requireAuth";
+import { DEMO_TTL_HOURS, MAX_LIVE_DEMO_ACCOUNTS } from "../demo/constants";
+import { createDemoAccount, DemoBusyError } from "../demo/demoService";
+import { validateBody, signupSchema, loginSchema } from "../schemas/auth";
 
 const authRouter = Router();
 
-// Fixed dummy hash for timing attack mitigation on unknown user login
 const DUMMY_HASH = "$2b$12$zsDV6WG5Lqm9Y5.FOXtBqu.Rtk3rqhEvebEJgqpSiIsQvTkcDfkWS";
 
 const authLimiter = rateLimit({
@@ -20,42 +21,21 @@ const authLimiter = rateLimit({
   statusCode: 429,
 });
 
-function validateBody<T>(schema: z.ZodSchema<T>) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    const result = schema.safeParse(req.body);
-    if (!result.success) {
-      const fields = result.error.issues.map((issue) => ({
-        path: issue.path.join("."),
-        message: issue.message,
-      }));
-      res.status(400).json({
-        error: "Validation failed",
-        fields,
-      });
-      return;
-    }
-    req.body = result.data;
-    next();
-  };
+const demoLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: "Too many demo sessions from your network. Please try again later or sign up.",
+  },
+  statusCode: 429,
+});
+
+let testDemoCap: number | null = null;
+export function setDemoCap(cap: number | null): void {
+  testDemoCap = cap;
 }
-
-const signupSchema = z.object({
-  email: z.string().trim().email("Invalid email address"),
-  name: z
-    .string()
-    .trim()
-    .min(1, "Name must be at least 1 character")
-    .max(100, "Name must be at most 100 characters"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .max(72, "Password must be at most 72 characters"),
-});
-
-const loginSchema = z.object({
-  email: z.string().trim().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
-});
 
 authRouter.post(
   "/signup",
@@ -78,6 +58,7 @@ authRouter.post(
           id: user.id,
           email: user.email,
           name: user.name,
+          isDemo: false,
         },
       });
     } catch (err: unknown) {
@@ -110,14 +91,15 @@ authRouter.post(
         email: string;
         name: string;
         password_hash: string;
+        is_demo: boolean;
       }>(
-        "SELECT id, email, name, password_hash FROM users WHERE lower(email) = lower($1)",
+        "SELECT id, email, name, password_hash, is_demo FROM users WHERE lower(email) = lower($1)",
         [normalizedEmail]
       );
 
       const user = result.rows[0];
 
-      if (!user) {
+      if (!user || user.is_demo) {
         await bcrypt.compare(password, DUMMY_HASH);
         res.status(401).json({ error: "Invalid email or password" });
         return;
@@ -135,6 +117,7 @@ authRouter.post(
           id: user.id,
           email: user.email,
           name: user.name,
+          isDemo: false,
         },
       });
     } catch (err) {
@@ -153,6 +136,33 @@ authRouter.get(
   requireAuth,
   (req: Request, res: Response): void => {
     res.status(200).json({ user: req.user });
+  }
+);
+
+authRouter.post(
+  "/demo",
+  demoLimiter,
+  async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const cap = testDemoCap ?? MAX_LIVE_DEMO_ACCOUNTS;
+      const { user, resumeId } = await createDemoAccount(cap);
+      setSessionCookie(res, user.id, DEMO_TTL_HOURS * 3600);
+      res.status(201).json({
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          isDemo: true,
+        },
+        resumeId,
+      });
+    } catch (err) {
+      if (err instanceof DemoBusyError) {
+        res.status(503).json({ error: err.message });
+        return;
+      }
+      next(err);
+    }
   }
 );
 

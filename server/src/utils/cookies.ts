@@ -4,13 +4,13 @@ import { config } from "../config";
 
 export const COOKIE_NAME = "rr_session";
 
-export function getCookieOptions(): CookieOptions {
+export function getCookieOptions(maxAgeSeconds?: number): CookieOptions {
   return {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
     secure: config.NODE_ENV === "production",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: (maxAgeSeconds !== undefined ? maxAgeSeconds : 7 * 24 * 60 * 60) * 1000,
   };
 }
 
@@ -23,12 +23,17 @@ export function getClearCookieOptions(): CookieOptions {
   };
 }
 
-export function setSessionCookie(res: Response, userId: string): void {
+export function setSessionCookie(
+  res: Response,
+  userId: string,
+  maxAgeSeconds?: number
+): void {
+  const expiresIn = maxAgeSeconds !== undefined ? maxAgeSeconds : "7d";
   const token = jwt.sign({ sub: userId }, config.JWT_SECRET, {
     algorithm: "HS256",
-    expiresIn: "7d",
+    expiresIn,
   });
-  res.cookie(COOKIE_NAME, token, getCookieOptions());
+  res.cookie(COOKIE_NAME, token, getCookieOptions(maxAgeSeconds));
 }
 
 export function clearSessionCookie(res: Response): void {

@@ -90,6 +90,10 @@ The migrate script tracks applied files in a `schema_migrations` table and is sa
 - `POST /api/auth/login`: Authenticates user credentials, sets session cookie, and returns user details.
 - `POST /api/auth/logout`: Clears the session cookie and logs the user out.
 - `GET /api/auth/me`: Returns the currently authenticated user details.
+- `POST /api/auth/demo`: Creates a temporary demo account with a prefilled sample resume, sets session cookie, and returns user details and resume ID.
+
+#### Demo Accounts
+Demo accounts allow visitors to try the application with prefilled sample data without signup. Demo accounts have a 24-hour lifetime, lazy cleanup on access and server startup, rate limiting (5 sessions/hr per IP), and a global concurrency cap (200 live accounts). Normal signups cannot use the reserved demo domain (`@demo.resume-rocket.invalid`).
 
 ### Resumes (`/api/resumes`)
 - `GET /api/resumes`: Lists all active resumes for the authenticated user, newest first, with optional title search (`?q=`).
