@@ -66,6 +66,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  isDemo: boolean;
 }
 
 export interface ResumeSummary {

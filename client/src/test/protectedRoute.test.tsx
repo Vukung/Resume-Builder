@@ -12,6 +12,8 @@ describe("ProtectedRoute", () => {
       login: vi.fn(),
       signup: vi.fn(),
       logout: vi.fn(),
+      setUser: vi.fn(),
+      startDemo: vi.fn(),
     });
 
     render(
@@ -31,11 +33,13 @@ describe("ProtectedRoute", () => {
 
   it("renders its children for a logged in user", () => {
     vi.spyOn(UseAuthModule, "useAuth").mockReturnValue({
-      user: { id: "user-123", email: "user@example.com", name: "Alex" },
+      user: { id: "user-123", email: "user@example.com", name: "Alex", isDemo: false },
       isLoading: false,
       login: vi.fn(),
       signup: vi.fn(),
       logout: vi.fn(),
+      setUser: vi.fn(),
+      startDemo: vi.fn(),
     });
 
     render(

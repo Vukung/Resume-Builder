@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { api, ApiError } from "../api/client";
 import { ResumeSummary } from "../api/types";
 import { Header } from "../components/Header";
+import { DemoBanner } from "../components/DemoBanner";
 import { ResumeCard } from "../components/ResumeCard";
 import { NewResumeDialog } from "../components/NewResumeDialog";
 import { DeleteConfirmDialog } from "../components/DeleteConfirmDialog";
@@ -125,6 +126,7 @@ export const DashboardPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-surface flex flex-col">
       <Header />
+      <DemoBanner />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">

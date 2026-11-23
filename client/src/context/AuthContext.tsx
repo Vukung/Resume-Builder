@@ -1,6 +1,7 @@
 import React, {
   useState,
   useEffect,
+  useRef,
   useCallback,
   ReactNode,
 } from "react";
@@ -15,10 +16,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
+  const userRef = useRef<User | null>(user);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
   useEffect(() => {
     setUnauthorizedHandler(() => {
+      const wasDemo = userRef.current?.isDemo === true;
       setUser(null);
-      toast.error("Your session expired. Please log in again.");
+      if (wasDemo) {
+        toast.error("Your demo has ended. Start a new demo or create an account.");
+      } else {
+        toast.error("Your session expired. Please log in again.");
+      }
       navigate("/login", { replace: true });
     });
 
@@ -64,17 +75,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     [navigate]
   );
 
-  const logout = useCallback(async () => {
-    try {
-      await api.logout();
-    } finally {
-      setUser(null);
-      navigate("/login", { replace: true });
-    }
+  const logout = useCallback(
+    async (redirectPath?: string) => {
+      try {
+        await api.logout();
+      } finally {
+        setUser(null);
+        navigate(redirectPath ?? "/login", { replace: true });
+      }
+    },
+    [navigate]
+  );
+
+  const startDemo = useCallback(async () => {
+    const res = await api.startDemo();
+    setUser(res.user);
+    navigate(`/resume/${res.resumeId}`);
+    return res;
   }, [navigate]);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, signup, logout }}>
+    <AuthContext.Provider
+      value={{ user, isLoading, login, signup, logout, setUser, startDemo }}
+    >
       {children}
     </AuthContext.Provider>
   );

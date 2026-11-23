@@ -24,6 +24,11 @@ export const Header: React.FC = () => {
             <div className="flex items-center gap-2 text-sm text-foreground-muted bg-surface px-3 py-1.5 rounded-full border border-border">
               <UserIcon className="w-4 h-4 text-foreground-subtle" />
               <span className="font-medium text-foreground">{user.name}</span>
+              {user.isDemo && (
+                <span className="text-[10px] font-semibold tracking-wide uppercase px-1.5 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20">
+                  Demo
+                </span>
+              )}
             </div>
             <button
               onClick={() => logout()}

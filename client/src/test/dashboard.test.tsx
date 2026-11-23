@@ -9,11 +9,13 @@ describe("DashboardPage", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.spyOn(UseAuthModule, "useAuth").mockReturnValue({
-      user: { id: "u-1", name: "Jordan Smith", email: "jordan@example.com" },
+      user: { id: "u-1", name: "Jordan Smith", email: "jordan@example.com", isDemo: false },
       isLoading: false,
       login: vi.fn(),
       signup: vi.fn(),
       logout: vi.fn(),
+      setUser: vi.fn(),
+      startDemo: vi.fn(),
     });
   });
 

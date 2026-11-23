@@ -88,12 +88,15 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       const status = res.status;
       let message = payload?.error || `Request failed with status ${status}`;
 
-      if (status === 429) {
+      if (status === 429 && !path.startsWith("/api/auth/demo")) {
         message = "Too many attempts, please try again in a few minutes.";
       }
 
       // Handle global 401 if not login, signup, or initial me
-      const isLoginOrSignup = path.startsWith("/api/auth/login") || path.startsWith("/api/auth/signup");
+      const isLoginOrSignup =
+        path.startsWith("/api/auth/login") ||
+        path.startsWith("/api/auth/signup") ||
+        path.startsWith("/api/auth/demo");
       const isInitialMe = options.isInitialMe;
 
       if (status === 401 && !isLoginOrSignup && !isInitialMe) {
@@ -129,27 +132,19 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 export const api = {
   // Auth
   signup: (data: { email: string; name: string; password: string }) =>
-    request<{ user: User }>("/api/auth/signup", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+    request<{ user: User }>("/api/auth/signup", { method: "POST", body: JSON.stringify(data) }),
 
   login: (data: { email: string; password: string }) =>
-    request<{ user: User }>("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+    request<{ user: User }>("/api/auth/login", { method: "POST", body: JSON.stringify(data) }),
+
+  startDemo: () =>
+    request<{ user: User; resumeId: string }>("/api/auth/demo", { method: "POST" }),
 
   logout: () =>
-    request<{ ok: boolean }>("/api/auth/logout", {
-      method: "POST",
-    }),
+    request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
 
   me: (isInitial = false) =>
-    request<{ user: User }>("/api/auth/me", {
-      method: "GET",
-      isInitialMe: isInitial,
-    }),
+    request<{ user: User }>("/api/auth/me", { method: "GET", isInitialMe: isInitial }),
 
   // Resumes
   listResumes: (q?: string) => {

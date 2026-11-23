@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { ApiError } from "../api/client";
 import { Rocket, Loader2, AlertCircle } from "lucide-react";
+import { TryDemoButton } from "../components/TryDemoButton";
 
 export const SignupPage: React.FC = () => {
   const { signup } = useAuth();
@@ -170,6 +171,10 @@ export const SignupPage: React.FC = () => {
             <span>Create Account</span>
           </button>
         </form>
+
+        <div className="mt-6 pt-6 border-t border-border">
+          <TryDemoButton />
+        </div>
 
         <div className="mt-6 text-center text-sm text-foreground-muted">
           Already have an account?{" "}

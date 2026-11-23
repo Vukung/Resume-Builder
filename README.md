@@ -46,6 +46,10 @@ cd client
 npm test
 ```
 
+### Try the Demo
+
+Visitors can click "Try a demo with a sample resume" on the login or signup page to explore Resume Rocket immediately without signing up. The button provisions a temporary demo account with prefilled fictional sample data and navigates directly into the editor. A slim, non-dismissible demo banner reminds the user of the temporary session and provides a "Create a real account" shortcut to switch to a permanent account at any time. Demo accounts and their sample resumes are deleted automatically after 24 hours.
+
 ### Editor & Live Preview
 
 The resume editor (`/resume/:id`) features a side-by-side workspace with collapsible section forms (Basics, Summary, Education, Skills, Experience, Projects, Certifications) and an ATS-friendly, semantic preview renderer styled with standard print units. Repeatable list sections support adding, removing with a 6-second Undo toast, and moving items up and down with disabled boundaries. Content edits automatically autosave with a 1500ms debounce, sequencing updates during in-flight saves to prevent overlapping requests. The editor flushes immediately on visibility change or manual save (`Ctrl+S`/`Cmd+S`), and retries failed saves automatically up to 3 times with exponential backoff before offering a manual retry button.

@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useEditorState } from "../editor/hooks/useEditorState";
 import { EditorHeader } from "../editor/components/EditorHeader";
+import { DemoBanner } from "../components/DemoBanner";
 import { BasicsForm } from "../editor/forms/BasicsForm";
 import { SummaryForm } from "../editor/forms/SummaryForm";
 import { EducationForm } from "../editor/forms/EducationForm";
@@ -111,6 +112,7 @@ export const EditorPage: React.FC = () => {
         onBack={handleBack}
         onRetryNow={retryNow}
       />
+      <DemoBanner />
 
       {/* Mobile Tab Bar (< 1024px) */}
       <div className="lg:hidden bg-surface-card border-b border-border px-4 py-2 flex justify-center shrink-0">

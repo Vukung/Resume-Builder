@@ -22,6 +22,8 @@ describe("LoginPage", () => {
       login: mockLogin,
       signup: vi.fn(),
       logout: vi.fn(),
+      setUser: vi.fn(),
+      startDemo: vi.fn(),
     });
 
     render(
