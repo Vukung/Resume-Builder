@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, waitFor, within, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { EditorPage } from "../pages/EditorPage";
+import { PreviewPane } from "../editor/preview/PreviewPane";
 import { api } from "../api/client";
 import { ResumeContent } from "../api/types";
 
@@ -286,5 +287,79 @@ describe("PreviewPane — two-project fixture", () => {
     // Project 2 must still be in preview
     expect(within(previewPanel).getByText("Second Project")).toBeInTheDocument();
     expect(within(previewPanel).getByText("Renamed Project")).toBeInTheDocument();
+  });
+});
+
+describe("PreviewPane — ResizeObserver wrapper height synchronization", () => {
+  let observedElements: Element[] = [];
+  let resizeCallbacks: ResizeObserverCallback[] = [];
+
+  class MockResizeObserver {
+    constructor(cb: ResizeObserverCallback) {
+      resizeCallbacks.push(cb);
+    }
+    observe = vi.fn((el: Element) => {
+      observedElements.push(el);
+    });
+    unobserve = vi.fn();
+    disconnect = vi.fn();
+  }
+
+  beforeEach(() => {
+    observedElements = [];
+    resizeCallbacks = [];
+    vi.stubGlobal("ResizeObserver", MockResizeObserver);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("observes container and sheet, and updates wrapper height when sheet grows and shrinks", () => {
+    const { getByTestId } = render(<PreviewPane content={fixtureContent} />);
+
+    const wrapper = getByTestId("preview-scale-wrapper");
+    const sheet = getByTestId("preview-sheet");
+    const container = wrapper.parentElement!;
+
+    // Assert that ResizeObserver observes BOTH container and sheet
+    expect(observedElements).toContain(container);
+    expect(observedElements).toContain(sheet);
+
+    // 1. Simulate sheet height growing (e.g. 1100px)
+    Object.defineProperty(sheet, "offsetHeight", { value: 1100, configurable: true });
+    act(() => {
+      for (const cb of resizeCallbacks) {
+        cb(
+          [
+            {
+              target: sheet,
+              contentRect: { height: 1100, width: 794 } as DOMRectReadOnly,
+            } as unknown as ResizeObserverEntry,
+          ],
+          {} as ResizeObserver
+        );
+      }
+    });
+
+    expect(wrapper.style.height).toBe("1100px");
+
+    // 2. Simulate sheet height shrinking (e.g. 650px)
+    Object.defineProperty(sheet, "offsetHeight", { value: 650, configurable: true });
+    act(() => {
+      for (const cb of resizeCallbacks) {
+        cb(
+          [
+            {
+              target: sheet,
+              contentRect: { height: 650, width: 794 } as DOMRectReadOnly,
+            } as unknown as ResizeObserverEntry,
+          ],
+          {} as ResizeObserver
+        );
+      }
+    });
+
+    expect(wrapper.style.height).toBe("650px");
   });
 });

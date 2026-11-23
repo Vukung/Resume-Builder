@@ -353,4 +353,69 @@ describe("ResumeDocument", () => {
 
     document.head.removeChild(styleEl);
   });
+
+  it("renders project layout: project with link renders p.project-title-line (name in bold + tech stack) and p.project-link-line (anchor); project without link renders no project-link-line", () => {
+    const content: ResumeContent = {
+      schemaVersion: 1,
+      basics: {
+        fullName: "Test User",
+        email: "test@example.com",
+        phone: "",
+        location: "",
+        links: [],
+      },
+      summary: "",
+      education: [],
+      skills: [],
+      experience: [],
+      projects: [
+        {
+          id: "proj-1",
+          name: "Alpha Project",
+          techStack: ["React", "TypeScript"],
+          link: "https://example.com/alpha",
+          bullets: ["First bullet"],
+        },
+        {
+          id: "proj-2",
+          name: "Beta Project",
+          techStack: ["Node.js"],
+          link: "",
+          bullets: ["Second bullet"],
+        },
+      ],
+      certifications: [],
+    };
+
+    const { container } = render(<ResumeDocument content={content} />);
+
+    // Check project 1: has link
+    const titleLines = container.querySelectorAll("p.project-title-line");
+    expect(titleLines).toHaveLength(2);
+
+    const firstTitleLine = titleLines[0];
+    const boldTitle = firstTitleLine.querySelector("span.item-title");
+    expect(boldTitle).toBeInTheDocument();
+    expect(boldTitle).toHaveTextContent("Alpha Project");
+    expect(firstTitleLine).toHaveTextContent("Alpha Project | React, TypeScript");
+
+    const linkLines = container.querySelectorAll("p.project-link-line");
+    expect(linkLines).toHaveLength(1);
+
+    const anchor = linkLines[0].querySelector("a");
+    expect(anchor).toBeInTheDocument();
+    expect(anchor).toHaveAttribute("href", "https://example.com/alpha");
+    expect(anchor).toHaveTextContent("example.com/alpha");
+
+    // Check project 2: without link
+    const secondTitleLine = titleLines[1];
+    const secondBoldTitle = secondTitleLine.querySelector("span.item-title");
+    expect(secondBoldTitle).toBeInTheDocument();
+    expect(secondBoldTitle).toHaveTextContent("Beta Project");
+    expect(secondTitleLine).toHaveTextContent("Beta Project | Node.js");
+
+    const entryBlocks = container.querySelectorAll("section .entry-block");
+    expect(entryBlocks).toHaveLength(2);
+    expect(entryBlocks[1].querySelector("p.project-link-line")).toBeNull();
+  });
 });

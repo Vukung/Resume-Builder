@@ -21,29 +21,43 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({ content, resumeTitle }
     const sheet = sheetRef.current;
     if (!container || !sheet) return;
 
-    const updateScale = () => {
-      const containerWidth = container.clientWidth;
-      if (containerWidth <= 0) return;
+    const updateDimensions = (entries?: ResizeObserverEntry[]) => {
+      let sheetHeight = sheet.offsetHeight;
+      let containerWidth = container.clientWidth;
 
-      const currentScale = Math.min(1, containerWidth / SHEET_WIDTH_PX);
+      if (entries) {
+        for (const entry of entries) {
+          if (entry.target === sheet) {
+            sheetHeight =
+              entry.borderBoxSize?.[0]?.blockSize ??
+              entry.contentRect?.height ??
+              (entry.target as HTMLElement).offsetHeight;
+          } else if (entry.target === container) {
+            containerWidth =
+              entry.borderBoxSize?.[0]?.inlineSize ??
+              entry.contentRect?.width ??
+              (entry.target as HTMLElement).clientWidth;
+          }
+        }
+      }
+
+      const currentScale = containerWidth > 0 ? Math.min(1, containerWidth / SHEET_WIDTH_PX) : 1;
       setScale(currentScale);
-
-      const naturalHeight = sheet.offsetHeight;
-      setScaledHeight(naturalHeight * currentScale);
+      setScaledHeight(sheetHeight * currentScale);
     };
 
-    updateScale();
+    updateDimensions();
 
     if (typeof ResizeObserver !== "undefined") {
-      const observer = new ResizeObserver(() => {
-        updateScale();
+      const observer = new ResizeObserver((entries) => {
+        updateDimensions(entries);
       });
       observer.observe(container);
       observer.observe(sheet);
       return () => observer.disconnect();
     } else {
-      window.addEventListener("resize", updateScale);
-      return () => window.removeEventListener("resize", updateScale);
+      window.addEventListener("resize", () => updateDimensions());
+      return () => window.removeEventListener("resize", () => updateDimensions());
     }
   }, [content]);
 
@@ -55,6 +69,7 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({ content, resumeTitle }
     >
       <PreviewToolbar content={content} resumeTitle={resumeTitle} />
       <div
+        data-testid="preview-scale-wrapper"
         style={{
           width: SHEET_WIDTH_PX * scale,
           height: scaledHeight !== undefined ? scaledHeight : "auto",
@@ -64,6 +79,7 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({ content, resumeTitle }
       >
         <div
           ref={sheetRef}
+          data-testid="preview-sheet"
           style={{
             transform: `scale(${scale})`,
             transformOrigin: "top left",
