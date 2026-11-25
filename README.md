@@ -1,121 +1,167 @@
 # Resume Rocket
 
-A resume builder with a live side-by-side preview.
+A resume builder with a live side-by-side preview and one-click PDF download.
 
-## Client
+**Live app:** https://resume.vukung.me (no signup needed: click "Try a demo with a sample resume" on the login page)
 
-The `client/` folder contains the frontend application built with Vite, React, TypeScript, and Tailwind CSS.
+## Why I built this
 
-### Installation
+My college uses a placement management portal, Pod.ai, where students build a resume once and reuse it across placement drives. While using it I could never see what the finished resume would actually look like: no preview of the layout, no sense of how many pages it would run to, no view of where the bullet points land, and no way to check how it would look printed.
+
+Resume Rocket is my attempt at that missing piece. You type on the left and the resume updates on the right as you type, and you can download the real PDF at any time. The downloaded PDF shows the true page breaks. Page break guides inside the live preview are planned but not built yet.
+
+## What it does
+
+- Accounts with signup, login and logout
+- Up to 20 resumes per account: create, rename, duplicate, search and delete (with a confirmation)
+- A side-by-side editor with seven collapsible sections: Basics, Summary, Education, Skills, Experience, Projects, Certifications
+- An info icon next to each field with guidance on what to write
+- Add, remove (with a 6 second Undo), and move up or down for every list entry
+- Chip inputs for skills and tech stacks, bullet editing with Enter and Backspace shortcuts, month and year dropdowns, and percentage or CGPA grades with validation and a hint when a percentage looks like a CGPA
+- Autosave: 1.5 seconds after you stop typing, never two saves at once, three automatic retries five seconds apart, and an immediate save on Ctrl+S or Cmd+S or when the tab is hidden
+- A live preview rendered as semantic HTML with a standard font, designed to stay readable by applicant tracking systems
+- Download PDF: a real A4 file named "Your Name - Resume.pdf" with selectable text and no browser header or footer. Ctrl+P also prints the preview.
+- A responsive layout: two panels on wide screens, Edit and Preview tabs on small ones
+- A temporary demo account for each visitor, with a fictional sample resume, deleted after 24 hours
+
+## How it works
+
+```mermaid
+flowchart LR
+  B[Browser] -->|HTTPS| F[Frontend<br/>resume.vukung.me<br/>Cloudflare]
+  B -->|HTTPS + session cookie| A[API<br/>api.vukung.me<br/>Render]
+  A -->|SQL| D[(Neon Postgres)]
+```
+
+
+The frontend is a static single-page app. The API is a stateless Express server. Because the app and the API are on subdomains of the same domain, the browser treats them as the same site and a plain `SameSite=Lax` cookie works for login.
+
+## Key design decisions
+
+| Decision | Why |
+|---|---|
+| Each resume is one JSONB document in Postgres | A resume is edited and saved as a whole. One validated update replaces the old design of six per-section tables, which cleared and re-inserted every section on each save without a transaction |
+| Strict zod validation on the server, mirrored limits on the client | The server never trusts the client, and the client sanitizes saves so a half-typed link or an out-of-range grade cannot cause a failed autosave |
+| One shared resume model feeds the preview and the PDF | Section order, filtering, dates, grades and links follow the same rules in both. The two layouts are still separate, so line and page breaks can differ slightly |
+| Real PDF generation, not `window.print()` | Browsers add their own date and web address to printed pages and CSS cannot remove them. `@react-pdf/renderer` is loaded only when someone clicks Download, so the main bundle stays small |
+| Session in an httpOnly cookie, never `localStorage` | JavaScript cannot read the token, which limits the damage from a script injection |
+| Neon instead of Supabase | The free Supabase plan pauses inactive projects after a week. Neon scales to zero but wakes on the next connection |
+| Temporary per-visitor demo accounts | A recruiter gets a private sandbox in one click, with no shared data to break |
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Server | Node 24, Express 5, TypeScript (strict), `pg`, `zod`, `helmet`, `cors`, `bcryptjs`, `jsonwebtoken`, `express-rate-limit` |
+| Database | Postgres on Neon, with plain SQL migrations |
+| Client | Vite, React, TypeScript (strict), Tailwind CSS, React Router, Sonner, Lucide icons |
+| PDF | `@react-pdf/renderer` with built-in Helvetica |
+| Tests | `node:test` for the server, Vitest and Testing Library for the client |
+| Hosting | Render (API), Cloudflare (frontend and DNS), Neon (database) |
+
+## Data model
+
+- **`users`**: `id` (uuid), `email` (unique on lowercase), `name`, `password_hash`, `created_at`, `is_demo`
+- **`resumes`**: `id` (uuid), `user_id` (cascade delete), `title`, `content` (JSONB), `is_deleted` (soft delete), `created_at`, `updated_at`
+- **`schema_migrations`**: records which migration files have run
+
+`content` is a versioned JSON object with `basics`, `summary`, `education`, `skills`, `experience`, `projects` and `certifications`. List items carry client-generated ids. Limits are enforced on the server: 200 KB per request, 15 bullets per entry, 40 skills per group, 20 resumes per user.
+
+## API
+
+| Method | Route | Purpose | Auth |
+|---|---|---|---|
+| GET | `/health` | Liveness check (never touches the database) | No |
+| GET | `/health/db` | Database connectivity check | No |
+| POST | `/api/auth/signup` | Create an account | No |
+| POST | `/api/auth/login` | Log in | No |
+| POST | `/api/auth/logout` | Log out | No |
+| GET | `/api/auth/me` | Current user | Yes |
+| POST | `/api/auth/demo` | Create a temporary demo account with a sample resume | No |
+| GET | `/api/resumes` | List your resumes (`?q=` searches titles) | Yes |
+| POST | `/api/resumes` | Create a resume | Yes |
+| GET | `/api/resumes/:id` | Get one resume with its content | Yes |
+| PATCH | `/api/resumes/:id` | Rename | Yes |
+| PUT | `/api/resumes/:id/content` | Replace the content | Yes |
+| POST | `/api/resumes/:id/duplicate` | Duplicate | Yes |
+| DELETE | `/api/resumes/:id` | Soft delete | Yes |
+
+## Security
+
+- Passwords are hashed with bcrypt (cost 12). Login returns the same error for a wrong password and an unknown email, and runs a dummy comparison so response time does not reveal which emails exist.
+- Every resume query filters by resume id, owner and not-deleted. Another user's resume, a random id and a malformed id all return the same 404.
+- Origin check on state-changing requests, a single allowed CORS origin, `helmet`, strict input validation, parameterized SQL, and no stack traces or database errors sent to clients.
+- Rate limits: 10 signups or logins per 15 minutes per IP, 5 demo sessions per hour per IP, and a per-user limit on the resume routes.
+- Demo accounts use a reserved email domain, have a password nobody knows, cannot log in, expire after 24 hours, and are capped at 200 live accounts.
+
+## Testing
+
+- **Server:** 40 tests covering auth, the resumes API (including cross-user access), validation limits, soft delete, and the demo account lifecycle. They run against the real database named in `DATABASE_URL`, create temporary users and remove them afterwards, so point them at a database you do not mind touching.
+- **Client:** 74 tests covering the API client, routing, every form input, autosave and its failure path, the resume model, the preview, printing, PDF generation (including a smoke test that produces a real PDF), and the demo flow.
+- The agent that helped build this could not drive a browser, so on-screen behavior was checked by hand. There are no end-to-end browser tests.
+
+## Running locally
+
+**Prerequisites:** Node 24 and a free [Neon](https://neon.com) Postgres database (use the pooled connection string).
+
+```bash
+git clone https://github.com/Vukung/Resume-Builder.git
+cd Resume-Builder
+```
+
+**Server**
+
+```bash
+cd server
+npm install
+cp .env.example .env     # on Windows PowerShell: Copy-Item .env.example .env
+```
+
+Fill in `server/.env`:
+
+| Variable | Notes |
+|---|---|
+| `DATABASE_URL` | Your Neon pooled connection string |
+| `JWT_SECRET` | At least 32 characters. Generate one with `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
+| `CLIENT_ORIGIN` | Defaults to `http://localhost:5173` |
+| `PORT` | Defaults to 4000 |
+| `NODE_ENV` | `development` or `production` |
+
+```bash
+npm run migrate          # creates or updates the tables, safe to run repeatedly
+npm run dev              # http://localhost:4000
+```
+
+**Client** (in a second terminal)
 
 ```bash
 cd client
 npm install
+cp .env.example .env     # sets VITE_API_URL, defaults to http://localhost:4000
+npm run dev              # http://localhost:5173
 ```
 
-### Environment Variables
+Open the app at exactly `http://localhost:5173`. The server only accepts requests from that origin.
 
-Copy `.env.example` to `.env`:
+**Tests:** run `npm test` in `server` or in `client`.
 
-```bash
-VITE_API_URL=http://localhost:4000
-```
+## Deployment
 
-`VITE_API_URL` configures the backend API base URL (defaults to `http://localhost:4000` if omitted).
+- **Database:** Neon. Migrations run from your own machine, because Render does not run them. Run `npm run migrate` against the target database before deploying code that needs a schema change.
+- **API on Render (free web service):** root directory `server`, build command `npm ci --include=dev && npm run build` (dev dependencies are needed for the TypeScript build), start command `npm start`, health check path `/health`. Set `NODE_ENV`, `DATABASE_URL`, `CLIENT_ORIGIN` (the exact frontend origin, with no trailing slash) and `JWT_SECRET`.
+- **Frontend on Cloudflare:** built from the `client` folder with `npm run build`. `VITE_API_URL` must be set as a build-time variable, not a runtime one, because Vite bakes it into the files. If it is missing, the deployed app tries to call `localhost`.
+- **Domain:** the API is a CNAME at `api.vukung.me` with Cloudflare's proxy turned off, so Render can issue its certificate and the API sees real visitor IPs for rate limiting.
+- **Cold starts:** the free API server and the free database both sleep when idle. The app shows a "waking up the server" banner if a request takes more than 4 seconds.
 
-### Running Locally (Two Terminals)
 
-In terminal 1 (backend server):
-```bash
-cd server
-npm run dev
-```
+## Roadmap
 
-In terminal 2 (frontend client):
-```bash
-cd client
-npm run dev
-```
+- Retry once on a transient database connection error after the free database wakes
+- Dependency audit fixes, security headers and a content security policy
+- Continuous integration on every push, and an uptime monitor for the API
+- Page break guides and a page counter in the live preview
+- More templates, JSON import and export, and dark mode
+- Password reset and account deletion
 
-The frontend dev server runs at `http://localhost:5173`.
 
-### Running Tests
-
-```bash
-cd client
-npm test
-```
-
-### Try the Demo
-
-Visitors can click "Try a demo with a sample resume" on the login or signup page to explore Resume Rocket immediately without signing up. The button provisions a temporary demo account with prefilled fictional sample data and navigates directly into the editor. A slim, non-dismissible demo banner reminds the user of the temporary session and provides a "Create a real account" shortcut to switch to a permanent account at any time. Demo accounts and their sample resumes are deleted automatically after 24 hours.
-
-### Editor & Live Preview
-
-The resume editor (`/resume/:id`) features a side-by-side workspace with collapsible section forms (Basics, Summary, Education, Skills, Experience, Projects, Certifications) and an ATS-friendly, semantic preview renderer styled with standard print units. Repeatable list sections support adding, removing with a 6-second Undo toast, and moving items up and down with disabled boundaries. Content edits automatically autosave with a 1500ms debounce, sequencing updates during in-flight saves to prevent overlapping requests. The editor flushes immediately on visibility change or manual save (`Ctrl+S`/`Cmd+S`), and retries failed saves automatically up to 3 times with exponential backoff before offering a manual retry button.
-
-### Print and PDF Export
-
-The editor provides a one-click "Download PDF" toolbar button as well as native browser shortcut support (`Ctrl+P` / `Cmd+P`).
-
-- **Download PDF**: Generates a clean PDF file named `<Full Name> - Resume.pdf` with real selectable text and no browser headers or footers. The PDF library (`@react-pdf/renderer`) is loaded lazily via dynamic `import()` only when the user clicks Download, keeping the main application bundle lean.
-- **Shared Resume Model**: Both the on-screen live preview and the PDF export are built from a single shared model (`src/editor/shared/resumeModel.ts`), guaranteeing identical section ordering, content filtering, date formats, link handling, and grade rules across both views without drift.
-- **Typography & Layout**: The PDF document is formatted on standard A4 using built-in Helvetica and Helvetica-Bold fonts with 10.5pt base text, matching the on-screen preview margins (40pt vertical, 45pt horizontal). Section headers keep with their first entry, and bullets and entry headers avoid splitting across pages.
-- **Browser Print Dialog**: Pressing `Ctrl+P` or `Cmd+P` continues to trigger the browser's native print dialog using the print stylesheet and DOM portal (`#print-root`), allowing printing or saving through the browser if preferred.
-
-## Server Setup
-
-1. Install Node.js 24.x.
-2. Clone the repo and navigate to `server/`.
-3. Run `npm install`.
-4. Copy `.env.example` to `.env` and fill in `DATABASE_URL` with your Neon pooled connection string.
-5. Run `npm run migrate` to create the database tables.
-6. Run `npm run dev` to start the development server on port 4000.
-
-## Running Migrations
-
-Migrations are plain SQL files in `server/migrations/`. Run them with:
-
-```
-cd server
-npm run migrate
-```
-
-The migrate script tracks applied files in a `schema_migrations` table and is safe to run repeatedly.
-
-## API Routes
-
-### Health
-- `GET /health`: Returns service health status without touching the database.
-- `GET /health/db`: Checks database connectivity and returns database status.
-
-### Authentication (`/api/auth`)
-- `POST /api/auth/signup`: Creates a new user account, sets session cookie, and returns user details.
-- `POST /api/auth/login`: Authenticates user credentials, sets session cookie, and returns user details.
-- `POST /api/auth/logout`: Clears the session cookie and logs the user out.
-- `GET /api/auth/me`: Returns the currently authenticated user details.
-- `POST /api/auth/demo`: Creates a temporary demo account with a prefilled sample resume, sets session cookie, and returns user details and resume ID.
-
-#### Demo Accounts
-Demo accounts allow visitors to try the application with prefilled sample data without signup. Demo accounts have a 24-hour lifetime, lazy cleanup on access and server startup, rate limiting (5 sessions/hr per IP), and a global concurrency cap (200 live accounts). Normal signups cannot use the reserved demo domain (`@demo.resume-rocket.invalid`).
-
-### Resumes (`/api/resumes`)
-- `GET /api/resumes`: Lists all active resumes for the authenticated user, newest first, with optional title search (`?q=`).
-- `POST /api/resumes`: Creates a new resume with empty prefilled content.
-- `GET /api/resumes/:id`: Returns full details and content for a specific resume.
-- `PATCH /api/resumes/:id`: Renames a resume title.
-- `PUT /api/resumes/:id/content`: Validates and replaces resume content (includes optional `skills` with up to 15 groups, category up to 50 chars, and up to 40 items of max 40 chars; defaults to `[]`).
-- `POST /api/resumes/:id/duplicate`: Duplicates a resume with copied content (including skills) and updated title.
-- `DELETE /api/resumes/:id`: Soft deletes a resume.
-
-## Deploy to Render
-
-1. Push the repo to GitHub.
-2. Create a new Web Service on Render and connect the repo.
-3. Render will detect `render.yaml` and configure the service automatically (Build Command: `npm ci --include=dev && npm run build`, Start Command: `npm start`).
-4. Set `DATABASE_URL` to your Neon connection string and `CLIENT_ORIGIN` to your frontend URL in the Render dashboard.
-5. Run migrations manually from your local machine against the Neon database before deploying:
-   ```
-   cd server
-   DATABASE_URL="your-neon-connection-string" npm run migrate
-   ```
+Built by Utkarsh ([@Vukung](https://github.com/Vukung)).
